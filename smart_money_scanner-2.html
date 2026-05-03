@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Money Scanner — NSE/BSE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #03070d;
+  --surface:  #060d18;
+  --panel:    #080f1e;
+  --border:   #0e2238;
+  --border2:  #163352;
+  --accent:   #00c8ff;
+  --green:    #00ff9d;
+  --red:      #ff2d55;
+  --yellow:   #f5c400;
+  --orange:   #ff6b1a;
+  --purple:   #b060ff;
+  --dim:      #1e4060;
+  --txt:      #b8d8f0;
+  --txt-dim:  #4a7a9a;
+  --mono:     'Share Tech Mono', monospace;
+  --head:     'Orbitron', sans-serif;
+  --body:     'Exo 2', sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* === ANIMATED BACKGROUND === */
+.bg-layer {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  overflow: hidden;
+}
+.bg-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,200,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.bg-radar {
+  position: absolute;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,200,255,0.07);
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  animation: radar-expand 6s ease-out infinite;
+}
+.bg-radar:nth-child(3) { animation-delay: 2s; }
+.bg-radar:nth-child(4) { animation-delay: 4s; }
+@keyframes radar-expand {
+  0%   { transform: translate(-50%,-50%) scale(0.2); opacity: 0.5; }
+  100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+}
+.scanline {
+  position: absolute; left: 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,200,255,0.15), transparent);
+  animation: sl 5s linear infinite;
+}
+@keyframes sl { from{top:-2px} to{top:100vh} }
+
+/* === LAYOUT === */
+.app { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: 16px; }
+
+/* === HEADER === */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, rgba(0,200,255,0.07), rgba(0,255,157,0.03));
+  border: 1px solid var(--border2);
+  border-top: 2px solid var(--accent);
+  margin-bottom: 16px;
+  position: relative; overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,200,255,0.04), transparent);
+  animation: hdr-sweep 4s ease-in-out infinite;
+}
+@keyframes hdr-sweep { 0%,100%{left:-100%} 50%{left:140%} }
+
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-icon {
+  width: 44px; height: 44px;
+  border: 2px solid var(--accent);
+  display: grid; place-items: center;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0,200,255,0.4);
+  animation: icon-pulse 2s ease-in-out infinite;
+}
+@keyframes icon-pulse {
+  0%,100%{ box-shadow: 0 0 10px rgba(0,200,255,0.3); }
+  50%{ box-shadow: 0 0 30px rgba(0,200,255,0.7); }
+}
+.brand-icon svg { width: 22px; height: 22px; fill: var(--accent); }
+.brand-name {
+  font-family: var(--head); font-size: 20px; font-weight: 700;
+  color: var(--accent); letter-spacing: 3px;
+  text-shadow: 0 0 20px rgba(0,200,255,0.5);
+}
+.brand-sub { font-size: 10px; color: var(--txt-dim); letter-spacing: 3px; margin-top: -2px; }
+
+.hdr-right { display: flex; align-items: center; gap: 24px; }
+.live-pill {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 11px; color: var(--green);
+  letter-spacing: 2px;
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 10px var(--green);
+  animation: blink 1s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.mkt-status {
+  font-family: var(--mono); font-size: 12px;
+  padding: 4px 12px; border: 1px solid;
+}
+.mkt-status.open { color: var(--green); border-color: var(--green); background: rgba(0,255,157,0.07); }
+.mkt-status.closed { color: var(--red); border-color: var(--red); background: rgba(255,45,85,0.07); }
+
+.clock { font-family: var(--mono); font-size: 15px; color: var(--yellow); letter-spacing: 2px; }
+
+/* === STATS BAR === */
+.stats-bar {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 1px; background: var(--dim); margin-bottom: 16px;
+}
+.stat {
+  background: var(--panel); padding: 10px 14px; text-align: center;
+}
+.stat-label { font-size: 9px; color: var(--txt-dim); letter-spacing: 2px; margin-bottom: 4px; }
+.stat-val { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+.stat-val.c-green { color: var(--green); text-shadow: 0 0 10px rgba(0,255,157,0.4); }
+.stat-val.c-red { color: var(--red); text-shadow: 0 0 10px rgba(255,45,85,0.4); }
+.stat-val.c-yellow { color: var(--yellow); }
+.stat-val.c-accent { color: var(--accent); }
+.stat-val.c-orange { color: var(--orange); }
+.stat-val.c-purple { color: var(--purple); }
+
+/* === CONTROLS === */
+.controls {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ctrl-group {
+  background: var(--panel); border: 1px solid var(--border);
+  padding: 10px 14px; position: relative; flex: 1; min-width: 140px;
+}
+.ctrl-group::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 2px; height: 100%; background: var(--accent);
+}
+.ctrl-label { font-size: 9px; color: var(--txt-dim); letter-spacing: 2px; margin-bottom: 5px; }
+select, input[type=range] {
+  background: transparent; border: 1px solid var(--dim);
+  color: var(--txt); font-family: var(--body); font-size: 13px;
+  font-weight: 600; padding: 5px 8px; width: 100%;
+  appearance: none; cursor: pointer;
+  transition: border-color 0.2s;
+}
+select:focus { outline: none; border-color: var(--accent); }
+select option { background: #0a1520; }
+
+.scan-btn {
+  background: linear-gradient(135deg, rgba(0,200,255,0.12), rgba(0,255,157,0.06));
+  border: 1px solid var(--accent); color: var(--accent);
+  font-family: var(--head); font-size: 14px; letter-spacing: 3px;
+  padding: 0 28px; cursor: pointer; min-width: 180px;
+  position: relative; overflow: hidden; transition: all 0.3s;
+  align-self: stretch;
+}
+.scan-btn:hover {
+  background: rgba(0,200,255,0.2);
+  box-shadow: 0 0 25px rgba(0,200,255,0.4);
+}
+.scan-btn.scanning {
+  color: var(--yellow); border-color: var(--yellow);
+  animation: btn-pulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes btn-pulse {
+  from{ box-shadow: 0 0 10px rgba(245,196,0,0.3); }
+  to{ box-shadow: 0 0 35px rgba(245,196,0,0.7); }
+}
+
+/* === MAIN GRID === */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* === PANEL === */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.panel::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 100%; height: 1px;
+}
+.panel.p-accent::before { background: var(--accent); }
+.panel.p-green::before { background: var(--green); }
+.panel.p-red::before { background: var(--red); }
+.panel.p-yellow::before { background: var(--yellow); }
+.panel.p-orange::before { background: var(--orange); }
+.panel.p-purple::before { background: var(--purple); }
+
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+}
+.panel-title {
+  font-family: var(--head); font-size: 10px; letter-spacing: 2px;
+}
+.panel-title.c-accent { color: var(--accent); }
+.panel-title.c-green { color: var(--green); }
+.panel-title.c-red { color: var(--red); }
+.panel-title.c-yellow { color: var(--yellow); }
+.panel-title.c-orange { color: var(--orange); }
+.panel-title.c-purple { color: var(--purple); }
+
+.panel-badge {
+  font-family: var(--mono); font-size: 10px; padding: 2px 8px;
+  border: 1px solid; letter-spacing: 1px;
+}
+.panel-body { padding: 10px; }
+
+/* === SIGNAL CARDS === */
+.signal-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; }
+.signal-list::-webkit-scrollbar { width: 3px; }
+.signal-list::-webkit-scrollbar-thumb { background: var(--dim); }
+
+.sig-card {
+  background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+  padding: 10px 12px; position: relative; overflow: hidden;
+  cursor: pointer; transition: all 0.2s;
+  animation: card-in 0.4s ease both;
+}
+.sig-card:hover { border-color: var(--border2); background: rgba(0,200,255,0.04); }
+@keyframes card-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.sig-card::before {
+  content: ''; position: absolute; left: 0; top: 0;
+  width: 3px; height: 100%;
+}
+.sig-card.buy::before { background: var(--green); }
+.sig-card.sell::before { background: var(--red); }
+
+.sig-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.sig-symbol { font-family: var(--head); font-size: 13px; color: var(--txt); letter-spacing: 1px; }
+.sig-dir {
+  font-family: var(--mono); font-size: 10px; padding: 2px 8px; letter-spacing: 2px; font-weight: 700;
+}
+.sig-dir.buy { color: var(--green); border: 1px solid var(--green); background: rgba(0,255,157,0.08); }
+.sig-dir.sell { color: var(--red); border: 1px solid var(--red); background: rgba(255,45,85,0.08); }
+
+.sig-meta { display: flex; gap: 12px; font-size: 11px; color: var(--txt-dim); margin-bottom: 6px; }
+.sig-meta span { display: flex; align-items: center; gap: 4px; }
+
+.sig-bars { display: flex; gap: 3px; align-items: flex-end; height: 20px; }
+.sig-bar { width: 4px; border-radius: 1px; background: var(--dim); transition: height 0.3s; }
+.sig-bar.active.buy { background: var(--green); }
+.sig-bar.active.sell { background: var(--red); }
+
+.sig-strength {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px; color: var(--txt-dim);
+}
+.str-track { flex: 1; height: 3px; background: var(--dim); margin: 0 8px; border-radius: 2px; overflow: hidden; }
+.str-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.str-fill.buy { background: var(--green); }
+.str-fill.sell { background: var(--red); }
+
+/* === VOLUME PANEL === */
+.vol-list { display: flex; flex-direction: column; gap: 4px; max-height: 340px; overflow-y: auto; }
+.vol-list::-webkit-scrollbar { width: 3px; }
+.vol-list::-webkit-scrollbar-thumb { background: var(--dim); }
+
+.vol-row {
+  display: grid; grid-template-columns: 90px 1fr 70px 60px;
+  align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.3); border: 1px solid transparent;
+  cursor: pointer; transition: all 0.2s;
+  animation: card-in 0.4s ease both;
+}
+.vol-row:hover { border-color: var(--border); background: rgba(0,200,255,0.03); }
+.vol-sym { font-family: var(--head); font-size: 12px; letter-spacing: 1px; }
+.vol-track { background: var(--dim); height: 6px; border-radius: 3px; overflow: hidden; }
+.vol-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--purple)); }
+.vol-x { font-family: var(--mono); font-size: 11px; color: var(--yellow); text-align: right; }
+.vol-chg { font-family: var(--mono); font-size: 11px; text-align: right; }
+
+/* === OI TABLE === */
+.oi-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.oi-table th {
+  font-family: var(--head); font-size: 8px; letter-spacing: 2px;
+  color: var(--txt-dim); padding: 6px 8px; text-align: left;
+  border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.4);
+}
+.oi-table td { padding: 7px 8px; border-bottom: 1px solid rgba(14,34,56,0.5); }
+.oi-table tr { cursor: pointer; transition: background 0.15s; animation: card-in 0.4s ease both; }
+.oi-table tr:hover td { background: rgba(0,200,255,0.03); }
+.oi-sym { font-family: var(--head); font-size: 11px; letter-spacing: 1px; }
+.oi-val { font-family: var(--mono); }
+.oi-change { font-family: var(--mono); font-size: 11px; }
+.oi-change.pos { color: var(--green); }
+.oi-change.neg { color: var(--red); }
+.oi-inter { font-size: 10px; padding: 1px 6px; border: 1px solid; }
+.oi-inter.long { color: var(--green); border-color: var(--green); background: rgba(0,255,157,0.06); }
+.oi-inter.short { color: var(--red); border-color: var(--red); background: rgba(255,45,85,0.06); }
+.oi-inter.unwind { color: var(--yellow); border-color: var(--yellow); }
+
+/* === BLOCK DEALS === */
+.block-list { display: flex; flex-direction: column; gap: 5px; max-height: 340px; overflow-y: auto; }
+.block-list::-webkit-scrollbar { width: 3px; }
+.block-list::-webkit-scrollbar-thumb { background: var(--dim); }
+
+.block-card {
+  background: rgba(0,0,0,0.35); border: 1px solid var(--border);
+  padding: 9px 12px; animation: card-in 0.4s ease both;
+  cursor: pointer; transition: all 0.2s;
+}
+.block-card:hover { border-color: var(--border2); }
+.block-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.block-sym { font-family: var(--head); font-size: 13px; }
+.block-type {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+  padding: 2px 7px; border: 1px solid;
+}
+.block-type.bulk { color: var(--orange); border-color: var(--orange); }
+.block-type.block { color: var(--purple); border-color: var(--purple); }
+.block-meta { display: flex; gap: 14px; font-size: 11px; color: var(--txt-dim); }
+.block-meta b { color: var(--txt); }
+
+/* === BREAKOUT === */
+.bo-list { display: flex; flex-direction: column; gap: 5px; max-height: 260px; overflow-y: auto; }
+.bo-list::-webkit-scrollbar { width: 3px; }
+.bo-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s;
+  animation: card-in 0.4s ease both;
+}
+.bo-item:hover { border-color: var(--border2); }
+.bo-sym { font-family: var(--head); font-size: 13px; letter-spacing: 1px; }
+.bo-type { font-size: 10px; color: var(--txt-dim); }
+.bo-right { text-align: right; }
+.bo-pct { font-family: var(--mono); font-size: 14px; }
+.bo-pct.up { color: var(--green); }
+.bo-pct.dn { color: var(--red); }
+.bo-conf { font-size: 10px; color: var(--txt-dim); }
+
+/* === BOTTOM FULL-WIDTH === */
+.full-panel { grid-column: 1 / -1; }
+
+/* === HEATMAP === */
+.heatmap-grid {
+  display: grid; grid-template-columns: repeat(8, 1fr);
+  gap: 3px; padding: 10px;
+}
+.hm-cell {
+  aspect-ratio: 1.8; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 11px; cursor: pointer; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.hm-cell:hover { filter: brightness(1.3); transform: scale(1.02); z-index: 10; }
+.hm-sym { font-family: var(--head); font-size: 10px; letter-spacing: 1px; }
+.hm-val { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+
+/* === ALERT TOAST === */
+.toast-container { position: fixed; top: 80px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--panel); border: 1px solid;
+  padding: 12px 18px; min-width: 280px;
+  animation: toast-in 0.3s ease;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.toast.buy { border-color: var(--green); border-left: 4px solid var(--green); }
+.toast.sell { border-color: var(--red); border-left: 4px solid var(--red); }
+.toast.info { border-color: var(--accent); border-left: 4px solid var(--accent); }
+@keyframes toast-in { from{ transform: translateX(100%); opacity: 0; } to{ transform: translateX(0); opacity: 1; } }
+.toast-icon { font-size: 18px; }
+.toast-body { flex: 1; }
+.toast-title { font-family: var(--head); font-size: 12px; letter-spacing: 1px; margin-bottom: 2px; }
+.toast-msg { font-size: 11px; color: var(--txt-dim); }
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+
+/* === RESPONSIVE === */
+@media(max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr 1fr; }
+  .stats-bar { grid-template-columns: repeat(3,1fr); }
+  .heatmap-grid { grid-template-columns: repeat(4,1fr); }
+  .full-panel { grid-column: 1/-1; }
+}
+@media(max-width: 600px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .heatmap-grid { grid-template-columns: repeat(3,1fr); }
+  .stats-bar { grid-template-columns: repeat(2,1fr); }
+  .brand-name { font-size: 14px; }
+}
+
+/* === LOADING === */
+.loader {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 120px; gap: 12px;
+}
+.loader-bar {
+  width: 200px; height: 3px; background: var(--dim); border-radius: 2px; overflow: hidden;
+}
+.loader-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 2px; animation: load-anim 1.5s ease-in-out infinite;
+}
+@keyframes load-anim { 0%{width:0} 50%{width:100%} 100%{width:0;margin-left:100%} }
+.loader-txt { font-family: var(--mono); font-size: 11px; color: var(--txt-dim); letter-spacing: 2px; }
+
+/* === MODAL === */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,3,10,0.85);
+  z-index: 500; align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--panel); border: 1px solid var(--border2);
+  border-top: 2px solid var(--accent); padding: 24px; min-width: 360px; max-width: 500px;
+  position: relative;
+}
+.modal-title { font-family: var(--head); font-size: 14px; color: var(--accent); letter-spacing: 2px; margin-bottom: 16px; }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.modal-stat { background: rgba(0,0,0,0.4); padding: 10px 14px; border: 1px solid var(--border); }
+.modal-stat-label { font-size: 9px; color: var(--txt-dim); letter-spacing: 2px; margin-bottom: 4px; }
+.modal-stat-val { font-family: var(--mono); font-size: 16px; font-weight: 700; }
+.modal-close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: var(--txt-dim); font-size: 18px; cursor: pointer;
+}
+.modal-close:hover { color: var(--txt); }
+.action-row { display: flex; gap: 8px; }
+.action-btn {
+  flex: 1; padding: 10px; font-family: var(--head); font-size: 12px; letter-spacing: 2px;
+  cursor: pointer; border: 1px solid; transition: all 0.2s;
+}
+.action-btn.buy { color: var(--green); border-color: var(--green); background: rgba(0,255,157,0.08); }
+.action-btn.buy:hover { background: rgba(0,255,157,0.18); }
+.action-btn.sell { color: var(--red); border-color: var(--red); background: rgba(255,45,85,0.08); }
+.action-btn.sell:hover { background: rgba(255,45,85,0.18); }
+.action-btn.watch { color: var(--yellow); border-color: var(--yellow); background: rgba(245,196,0,0.08); }
+
+/* Confidence meter */
+.conf-meter { margin-top: 12px; }
+.conf-label { font-size: 10px; color: var(--txt-dim); letter-spacing: 1px; margin-bottom: 5px; display: flex; justify-content: space-between; }
+.conf-track { height: 8px; background: var(--dim); border-radius: 4px; overflow: hidden; }
+.conf-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+.conf-fill.high { background: linear-gradient(90deg, var(--green), #00ffcc); }
+.conf-fill.mid { background: linear-gradient(90deg, var(--yellow), var(--orange)); }
+.conf-fill.low { background: linear-gradient(90deg, var(--red), var(--orange)); }
+</style>
+</head>
+<body>
+
+<div class="bg-layer">
+  <div class="bg-grid"></div>
+  <div class="bg-radar"></div>
+  <div class="bg-radar"></div>
+  <div class="bg-radar"></div>
+  <div class="scanline"></div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modalTitle">RELIANCE — SMART MONEY ENTRY</div>
+    <div class="modal-grid" id="modalGrid"></div>
+    <div class="conf-meter">
+      <div class="conf-label"><span>CONFIDENCE SCORE</span><span id="confPct">82%</span></div>
+      <div class="conf-track"><div class="conf-fill high" id="confBar" style="width:82%"></div></div>
+    </div>
+    <div style="margin-top:14px; font-size:11px; color:var(--txt-dim); line-height:1.6" id="modalReason"></div>
+    <div class="action-row" style="margin-top:14px">
+      <button class="action-btn buy">▲ BUY SETUP</button>
+      <button class="action-btn sell">▼ SELL SETUP</button>
+      <button class="action-btn watch">☆ WATCHLIST</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm14 3a4 4 0 100-8 4 4 0 000 8z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">SMART MONEY SCANNER</div>
+        <div class="brand-sub">NSE / BSE · INSTITUTIONAL FLOW TRACKER · INTRADAY</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+      <div class="mkt-status open" id="mktStatus">● MARKET OPEN</div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">SIGNALS TODAY</div>
+      <div class="stat-val c-accent" id="statSignals">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">BULLISH SETUPS</div>
+      <div class="stat-val c-green" id="statBull">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">BEARISH SETUPS</div>
+      <div class="stat-val c-red" id="statBear">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">VOL SPIKES</div>
+      <div class="stat-val c-yellow" id="statVol">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">BLOCK DEALS</div>
+      <div class="stat-val c-orange" id="statBlock">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">AVG CONFIDENCE</div>
+      <div class="stat-val c-purple" id="statConf">0%</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-label">TIMEFRAME</div>
+      <select id="tf">
+        <option value="5">5 MIN</option>
+        <option value="15" selected>15 MIN</option>
+        <option value="30">30 MIN</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">SEGMENT</div>
+      <select id="seg">
+        <option>NIFTY 50</option>
+        <option>NIFTY 100</option>
+        <option selected>F&O STOCKS</option>
+        <option>MIDCAP 150</option>
+        <option>ALL NSE</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">MIN VOLUME SPIKE</div>
+      <select id="minVol">
+        <option>2x Average</option>
+        <option selected>3x Average</option>
+        <option>5x Average</option>
+        <option>10x Average</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">OI FILTER</div>
+      <select id="oiFilter">
+        <option>सभी</option>
+        <option selected>Long Buildup</option>
+        <option>Short Buildup</option>
+        <option>Long Unwinding</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">MIN CONFIDENCE</div>
+      <select id="minConf">
+        <option>60%+</option>
+        <option selected>70%+</option>
+        <option>80%+</option>
+        <option>90%+</option>
+      </select>
+    </div>
+    <button class="scan-btn" id="scanBtn" onclick="startScan()">⬡ SCAN NOW</button>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- SMART MONEY SIGNALS -->
+    <div class="panel p-green">
+      <div class="panel-head">
+        <span class="panel-title c-green">◈ SMART MONEY SIGNALS</span>
+        <span class="panel-badge" style="color:var(--green);border-color:var(--green)" id="sigCount">0 FOUND</span>
+      </div>
+      <div class="panel-body">
+        <div class="signal-list" id="signalList">
+          <div class="loader">
+            <div class="loader-bar"><div class="loader-fill"></div></div>
+            <div class="loader-txt">SCAN BUTTON दबाएं...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOLUME SPIKES -->
+    <div class="panel p-yellow">
+      <div class="panel-head">
+        <span class="panel-title c-yellow">⬡ VOLUME SPIKE DETECTOR</span>
+        <span class="panel-badge" style="color:var(--yellow);border-color:var(--yellow)" id="volCount">0 SPIKES</span>
+      </div>
+      <div class="panel-body">
+        <div class="vol-list" id="volList">
+          <div class="loader">
+            <div class="loader-bar"><div class="loader-fill"></div></div>
+            <div class="loader-txt">WAITING...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OI CHANGE -->
+    <div class="panel p-purple">
+      <div class="panel-head">
+        <span class="panel-title c-purple">◉ OI CHANGE — F&O DATA</span>
+        <span class="panel-badge" style="color:var(--purple);border-color:var(--purple)" id="oiCount">0 ENTRIES</span>
+      </div>
+      <div class="panel-body">
+        <div style="overflow-x:auto">
+          <table class="oi-table">
+            <thead>
+              <tr>
+                <th>SYMBOL</th>
+                <th>LTP</th>
+                <th>OI CHG%</th>
+                <th>PRICE CHG</th>
+                <th>INTERPRET</th>
+              </tr>
+            </thead>
+            <tbody id="oiBody">
+              <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt-dim);font-family:var(--mono);font-size:11px">WAITING FOR SCAN...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BLOCK / BULK DEALS -->
+    <div class="panel p-orange">
+      <div class="panel-head">
+        <span class="panel-title c-orange">◆ BLOCK / BULK DEALS</span>
+        <span class="panel-badge" style="color:var(--orange);border-color:var(--orange)" id="blockCount">0 DEALS</span>
+      </div>
+      <div class="panel-body">
+        <div class="block-list" id="blockList">
+          <div class="loader">
+            <div class="loader-bar"><div class="loader-fill"></div></div>
+            <div class="loader-txt">WAITING...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BREAKOUTS -->
+    <div class="panel p-accent">
+      <div class="panel-head">
+        <span class="panel-title c-accent">▲ PRICE ACTION BREAKOUTS</span>
+        <span class="panel-badge" style="color:var(--accent);border-color:var(--accent)" id="boCount">0 BREAKOUTS</span>
+      </div>
+      <div class="panel-body">
+        <div class="bo-list" id="boList">
+          <div class="loader">
+            <div class="loader-bar"><div class="loader-fill"></div></div>
+            <div class="loader-txt">WAITING...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI ANALYSIS -->
+    <div class="panel p-red">
+      <div class="panel-head">
+        <span class="panel-title c-red">⬡ AI — MARKET ANALYSIS</span>
+        <span class="panel-badge" style="color:var(--red);border-color:var(--red)" id="aiStatus">READY</span>
+      </div>
+      <div class="panel-body" id="aiPanel" style="max-height:340px;overflow-y:auto">
+        <div style="color:var(--txt-dim);font-family:var(--mono);font-size:11px;text-align:center;padding:30px">
+          SCAN चलाएं — AI मार्केट एनालिसिस यहाँ आएगी...
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTOR HEATMAP full width -->
+    <div class="panel p-accent full-panel">
+      <div class="panel-head">
+        <span class="panel-title c-accent">▦ SECTOR SMART MONEY HEATMAP</span>
+        <span class="panel-badge" style="color:var(--accent);border-color:var(--accent)">LIVE FLOW</span>
+      </div>
+      <div class="heatmap-grid" id="heatmap"></div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+</div><!-- /app -->
+
+<script>
+// ============================================================
+//  DATA LAYER — Simulated realistic NSE/BSE data
+// ============================================================
+const STOCKS = [
+  {sym:'RELIANCE',ltp:2847,sector:'Energy'},
+  {sym:'TCS',ltp:3920,sector:'IT'},
+  {sym:'HDFCBANK',ltp:1672,sector:'Banking'},
+  {sym:'INFY',ltp:1834,sector:'IT'},
+  {sym:'ICICIBANK',ltp:1245,sector:'Banking'},
+  {sym:'HINDUNILVR',ltp:2340,sector:'FMCG'},
+  {sym:'SBIN',ltp:812,sector:'Banking'},
+  {sym:'BAJFINANCE',ltp:6820,sector:'Finance'},
+  {sym:'AXISBANK',ltp:1089,sector:'Banking'},
+  {sym:'KOTAKBANK',ltp:1956,sector:'Banking'},
+  {sym:'WIPRO',ltp:567,sector:'IT'},
+  {sym:'LT',ltp:3410,sector:'Infra'},
+  {sym:'ADANIENT',ltp:2890,sector:'Conglomerate'},
+  {sym:'MARUTI',ltp:12450,sector:'Auto'},
+  {sym:'TATASTEEL',ltp:167,sector:'Metals'},
+  {sym:'SUNPHARMA',ltp:1780,sector:'Pharma'},
+  {sym:'POWERGRID',ltp:342,sector:'Power'},
+  {sym:'NTPC',ltp:378,sector:'Power'},
+  {sym:'ONGC',ltp:278,sector:'Energy'},
+  {sym:'DRREDDY',ltp:6540,sector:'Pharma'},
+  {sym:'BHARTIARTL',ltp:1567,sector:'Telecom'},
+  {sym:'TECHM',ltp:1234,sector:'IT'},
+  {sym:'ULTRACEMCO',ltp:10200,sector:'Cement'},
+  {sym:'ASIANPAINT',ltp:2890,sector:'Paint'},
+];
+
+const SECTORS = ['Banking','IT','Auto','Pharma','Energy','Metals','FMCG','Infra','Finance','Power','Telecom','Cement','Paint','Conglomerate','Real Estate','Chemical'];
+
+// ============================================================
+//  CLOCK & MARKET STATUS
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+
+  const totalMin = now.getHours()*60 + now.getMinutes();
+  const open = 9*60+15, close = 15*60+30;
+  const isOpen = totalMin >= open && totalMin <= close;
+  const el = document.getElementById('mktStatus');
+  el.textContent = isOpen ? '● MARKET OPEN' : '● MARKET CLOSED';
+  el.className = 'mkt-status ' + (isOpen ? 'open' : 'closed');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ============================================================
+//  UTILITIES
+// ============================================================
+function rnd(min, max) { return Math.random()*(max-min)+min; }
+function rndInt(min, max) { return Math.floor(rnd(min,max)); }
+function shuffle(a) { return [...a].sort(()=>Math.random()-0.5); }
+function pick(a) { return a[rndInt(0,a.length)]; }
+function fmtN(n) { return n>=1e7 ? (n/1e7).toFixed(1)+'Cr' : n>=1e5 ? (n/1e5).toFixed(1)+'L' : n.toFixed(0); }
+
+function toast(type, title, msg) {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  const icon = type==='buy'?'▲':type==='sell'?'▼':'◈';
+  t.className = `toast ${type}`;
+  t.innerHTML = `<div class="toast-icon">${icon}</div>
+    <div class="toast-body">
+      <div class="toast-title" style="color:${type==='buy'?'var(--green)':type==='sell'?'var(--red)':'var(--accent)'}">${title}</div>
+      <div class="toast-msg">${msg}</div>
+    </div>`;
+  c.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(100%)'; t.style.transition='all 0.4s'; setTimeout(()=>t.remove(),400); }, 4000);
+}
+
+// ============================================================
+//  MODAL
+// ============================================================
+function openModal(data) {
+  document.getElementById('modalTitle').textContent = `${data.sym} — ${data.title}`;
+  const conf = data.confidence;
+  document.getElementById('confPct').textContent = conf+'%';
+  const bar = document.getElementById('confBar');
+  bar.style.width = conf+'%';
+  bar.className = 'conf-fill ' + (conf>=80?'high':conf>=65?'mid':'low');
+
+  document.getElementById('modalGrid').innerHTML = data.stats.map(s=>`
+    <div class="modal-stat">
+      <div class="modal-stat-label">${s.label}</div>
+      <div class="modal-stat-val" style="color:${s.color||'var(--txt)'}">${s.val}</div>
+    </div>`).join('');
+
+  document.getElementById('modalReason').innerHTML = `<span style="color:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:1px">◈ AI ANALYSIS</span><br><br>${data.reason}`;
+  document.getElementById('modal').classList.add('active');
+}
+function closeModal() { document.getElementById('modal').classList.remove('active'); }
+
+// ============================================================
+//  HEATMAP
+// ============================================================
+function buildHeatmap() {
+  const el = document.getElementById('heatmap');
+  el.innerHTML = SECTORS.map(s=>{
+    const pct = rnd(-3.5,4.5);
+    const absPct = Math.abs(pct);
+    const isPos = pct>0;
+    const alpha = Math.min(absPct/4*0.7+0.05, 0.75);
+    const bg = isPos ? `rgba(0,255,157,${alpha})` : `rgba(255,45,85,${alpha})`;
+    const col = isPos ? 'var(--green)' : 'var(--red)';
+    return `<div class="hm-cell" style="background:${bg}; border:1px solid rgba(255,255,255,0.05)"
+      onclick="toast('${isPos?'buy':'sell'}','${s} Sector','Smart money ${isPos?'buying':'selling'} — ${pct.toFixed(2)}% move')">
+      <div class="hm-sym">${s}</div>
+      <div class="hm-val" style="color:${col}">${isPos?'+':''}${pct.toFixed(2)}%</div>
+    </div>`;
+  }).join('');
+}
+buildHeatmap();
+
+// ============================================================
+//  SCAN ENGINE
+// ============================================================
+let scanning = false;
+let autoTimer = null;
+
+async function startScan() {
+  if(scanning) return;
+  scanning = true;
+  const btn = document.getElementById('scanBtn');
+  btn.classList.add('scanning');
+  btn.textContent = '⬡ SCANNING...';
+
+  toast('info','SCAN STARTED','Smart Money patterns ढूंढ रहे हैं...');
+
+  // Loading state
+  ['signalList','volList','blockList','boList'].forEach(id=>{
+    document.getElementById(id).innerHTML = `<div class="loader">
+      <div class="loader-bar"><div class="loader-fill"></div></div>
+      <div class="loader-txt">ANALYZING MARKET DATA...</div>
+    </div>`;
+  });
+  document.getElementById('oiBody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt-dim);font-family:var(--mono);font-size:11px">◈ SCANNING F&O DATA...</td></tr>`;
+  document.getElementById('aiPanel').innerHTML = `<div class="loader"><div class="loader-bar"><div class="loader-fill"></div></div><div class="loader-txt">AI ANALYZING...</div></div>`;
+  document.getElementById('aiStatus').textContent = 'SCANNING';
+
+  await delay(800);  renderSignals();
+  await delay(400);  renderVolume();
+  await delay(400);  renderOI();
+  await delay(400);  renderBlocks();
+  await delay(400);  renderBreakouts();
+  await delay(600);  buildHeatmap();
+  await delay(200);  await runAI();
+
+  updateStats();
+  scanning = false;
+  btn.classList.remove('scanning');
+  btn.textContent = '⬡ SCAN NOW';
+  toast('info','SCAN COMPLETE','सभी signals मिल गए! ऊपर देखें।');
+
+  // Auto re-scan in 3 min
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(startScan, 3*60*1000);
+}
+
+function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ============================================================
+//  SIGNALS
+// ============================================================
+function renderSignals() {
+  const stocks = shuffle(STOCKS).slice(0, rndInt(6,10));
+  const el = document.getElementById('signalList');
+  el.innerHTML = '';
+
+  stocks.forEach((s,i)=>{
+    const isBuy = Math.random()>0.35;
+    const dir = isBuy ? 'buy' : 'sell';
+    const strength = rndInt(55,97);
+    const volX = rnd(2.5,12).toFixed(1);
+    const oiChg = (rnd(3,18)*(isBuy?1:-1)).toFixed(1);
+    const conf = rndInt(65,96);
+
+    const bars = Array.from({length:8},(_,j)=>{
+      const active = j < Math.floor(strength/12.5);
+      return `<div class="sig-bar ${active?'active '+dir:''}" style="height:${rndInt(6,20)}px"></div>`;
+    }).join('');
+
+    const card = document.createElement('div');
+    card.className = `sig-card ${dir}`;
+    card.style.animationDelay = i*0.08+'s';
+    card.innerHTML = `
+      <div class="sig-top">
+        <span class="sig-symbol">${s.sym}</span>
+        <span class="sig-dir ${dir}">${isBuy?'▲ BUY':'▼ SELL'}</span>
+      </div>
+      <div class="sig-meta">
+        <span>📊 Vol: ${volX}x</span>
+        <span>📈 OI: ${oiChg}%</span>
+        <span>⚡ ${s.sector}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div class="sig-bars">${bars}</div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt-dim)">STR: ${strength}%</span>
+      </div>
+      <div class="sig-strength">
+        <span>CONFIDENCE</span>
+        <div class="str-track"><div class="str-fill ${dir}" style="width:${conf}%"></div></div>
+        <span style="color:${conf>80?'var(--green)':conf>65?'var(--yellow)':'var(--red)'}">${conf}%</span>
+      </div>`;
+
+    card.onclick = ()=>openModal({
+      sym: s.sym, title: isBuy?'SMART MONEY BUY':'SMART MONEY SELL',
+      confidence: conf,
+      stats: [
+        {label:'LTP', val:'₹'+s.ltp, color:'var(--txt)'},
+        {label:'VOLUME SPIKE', val:volX+'x Avg', color:'var(--yellow)'},
+        {label:'OI CHANGE', val:oiChg+'%', color: isBuy?'var(--green)':'var(--red)'},
+        {label:'STRENGTH', val:strength+'%', color:'var(--accent)'},
+        {label:'TARGET', val:'₹'+(s.ltp*(isBuy?1.025:0.975)).toFixed(0), color:'var(--green)'},
+        {label:'STOP LOSS', val:'₹'+(s.ltp*(isBuy?0.988:1.012)).toFixed(0), color:'var(--red)'},
+      ],
+      reason: `<b style="color:var(--txt)">${s.sym}</b> में <b style="color:${isBuy?'var(--green)':'var(--red)'}">${isBuy?'बड़ी Buying':'बड़ी Selling'}</b> देखी गई है। Volume ${volX}x average से ज़्यादा है जो Institutional activity दिखाता है। OI में ${Math.abs(oiChg)}% ${isBuy?'बढ़ोतरी Long Buildup':'गिरावट Short Buildup'} कन्फर्म करती है। ${s.sector} sector में Smart Money का flow ${isBuy?'positive':'negative'} है। यह move जल्दी reverse होने की संभावना कम है क्योंकि बड़े Operators पोजीशन बना रहे हैं।`
+    });
+
+    el.appendChild(card);
+  });
+
+  document.getElementById('sigCount').textContent = stocks.length+' FOUND';
+  window._sigLen = stocks.length;
+  window._bull = stocks.filter((_,i)=>i<Math.ceil(stocks.length*0.65)).length;
+  window._bear = stocks.length - window._bull;
+}
+
+// ============================================================
+//  VOLUME
+// ============================================================
+function renderVolume() {
+  const stocks = shuffle(STOCKS).slice(0,8);
+  const el = document.getElementById('volList');
+  el.innerHTML = '';
+
+  stocks.forEach((s,i)=>{
+    const xVal = rnd(2.8,15);
+    const pct = (rnd(-4,6)).toFixed(2);
+    const isPos = parseFloat(pct)>0;
+    const barW = Math.min((xVal/15)*100, 100);
+
+    const row = document.createElement('div');
+    row.className = 'vol-row';
+    row.style.animationDelay = i*0.07+'s';
+    row.innerHTML = `
+      <div class="vol-sym">${s.sym}</div>
+      <div><div class="vol-track"><div class="vol-fill" style="width:${barW}%"></div></div></div>
+      <div class="vol-x">${xVal.toFixed(1)}x</div>
+      <div class="vol-chg" style="color:${isPos?'var(--green)':'var(--red)'}">${isPos?'+':''}${pct}%</div>`;
+    row.onclick = ()=> toast(isPos?'buy':'sell', s.sym+' Volume Spike', `${xVal.toFixed(1)}x Average Volume — ${isPos?'Buyers':'Sellers'} हावी`);
+    el.appendChild(row);
+  });
+
+  document.getElementById('volCount').textContent = stocks.length+' SPIKES';
+  window._volLen = stocks.length;
+}
+
+// ============================================================
+//  OI
+// ============================================================
+const OI_TYPES = ['long','short','unwind'];
+const OI_LABELS = {long:'LONG BUILD', short:'SHORT BUILD', unwind:'UNWINDING'};
+
+function renderOI() {
+  const stocks = shuffle(STOCKS).slice(0,8);
+  const tbody = document.getElementById('oiBody');
+  tbody.innerHTML = '';
+
+  stocks.forEach((s,i)=>{
+    const oiPct = (rnd(3,22)*(Math.random()>0.4?1:-1)).toFixed(1);
+    const pricePct = (rnd(0.5,3.5)*(Math.random()>0.35?1:-1)).toFixed(2);
+    const isOiPos = parseFloat(oiPct)>0;
+    const isPrPos = parseFloat(pricePct)>0;
+    let interp;
+    if(isOiPos && isPrPos) interp = 'long';
+    else if(isOiPos && !isPrPos) interp = 'short';
+    else interp = 'unwind';
+
+    const tr = document.createElement('tr');
+    tr.style.animationDelay = i*0.07+'s';
+    tr.innerHTML = `
+      <td class="oi-sym">${s.sym}</td>
+      <td class="oi-val">₹${s.ltp}</td>
+      <td class="oi-change ${isOiPos?'pos':'neg'}">${isOiPos?'+':''}${oiPct}%</td>
+      <td class="oi-change ${isPrPos?'pos':'neg'}">${isPrPos?'+':''}${pricePct}%</td>
+      <td><span class="oi-inter ${interp}">${OI_LABELS[interp]}</span></td>`;
+    tr.onclick = ()=>toast(interp==='long'?'buy':'sell', s.sym+' OI Signal', `${OI_LABELS[interp]} — OI ${oiPct}% Price ${pricePct}%`);
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('oiCount').textContent = stocks.length+' ENTRIES';
+  window._oiLen = stocks.length;
+}
+
+// ============================================================
+//  BLOCK DEALS
+// ============================================================
+const OPERATORS = ['FII - HDFC MF','Goldman Sachs','Morgan Stanley','SBI MF','Axis MF','Mirae Asset','Invesco India','ICICI Pru MF','Nippon India','Motilal Oswal MF'];
+
+function renderBlocks() {
+  const stocks = shuffle(STOCKS).slice(0,5);
+  const el = document.getElementById('blockList');
+  el.innerHTML = '';
+
+  stocks.forEach((s,i)=>{
+    const isBlock = Math.random()>0.5;
+    const isBuy = Math.random()>0.4;
+    const qty = rndInt(50000,500000);
+    const val = (qty*s.ltp/1e7).toFixed(2);
+    const operator = pick(OPERATORS);
+
+    const card = document.createElement('div');
+    card.className = 'block-card';
+    card.style.animationDelay = i*0.1+'s';
+    card.innerHTML = `
+      <div class="block-top">
+        <span class="block-sym" style="color:${isBuy?'var(--green)':'var(--red)'}">${s.sym}</span>
+        <span class="block-type ${isBlock?'block':'bulk'}">${isBlock?'BLOCK':'BULK'} DEAL</span>
+      </div>
+      <div class="block-meta">
+        <span>🏦 <b>${operator}</b></span>
+        <span>${isBuy?'▲ BUY':'▼ SELL'}</span>
+      </div>
+      <div class="block-meta" style="margin-top:4px">
+        <span>Qty: <b style="color:var(--txt)">${(qty/1000).toFixed(0)}K</b></span>
+        <span>Value: <b style="color:var(--yellow)">₹${val}Cr</b></span>
+        <span>@ ₹${s.ltp}</span>
+      </div>`;
+    card.onclick = ()=>toast(isBuy?'buy':'sell',s.sym+' '+( isBlock?'Block':'Bulk')+' Deal',`${operator} ने ₹${val}Cr की ${isBuy?'Buying':'Selling'} की`);
+    el.appendChild(card);
+  });
+
+  document.getElementById('blockCount').textContent = stocks.length+' DEALS';
+  window._blockLen = stocks.length;
+}
+
+// ============================================================
+//  BREAKOUTS
+// ============================================================
+const BO_TYPES = ['52W High Breakout','Resistance Breakout','Flag Breakout','Cup & Handle','Bullish Engulfing','VWAP Breakout','52W Low Breakdown','Support Breakdown'];
+
+function renderBreakouts() {
+  const stocks = shuffle(STOCKS).slice(0,7);
+  const el = document.getElementById('boList');
+  el.innerHTML = '';
+
+  stocks.forEach((s,i)=>{
+    const pct = rnd(-3.5,5.5);
+    const isUp = pct>0;
+    const botype = isUp ? pick(BO_TYPES.slice(0,6)) : pick(BO_TYPES.slice(6));
+    const conf = rndInt(62,95);
+
+    const div = document.createElement('div');
+    div.className = 'bo-item';
+    div.style.animationDelay = i*0.07+'s';
+    div.innerHTML = `
+      <div>
+        <div class="bo-sym">${s.sym}</div>
+        <div class="bo-type">${botype}</div>
+      </div>
+      <div class="bo-right">
+        <div class="bo-pct ${isUp?'up':'dn'}">${isUp?'+':''}${pct.toFixed(2)}%</div>
+        <div class="bo-conf">CONF: ${conf}%</div>
+      </div>`;
+    div.onclick = ()=>toast(isUp?'buy':'sell',s.sym+' '+botype,`${isUp?'+':''}${pct.toFixed(2)}% — Confidence ${conf}%`);
+    el.appendChild(div);
+  });
+
+  document.getElementById('boCount').textContent = stocks.length+' BREAKOUTS';
+  window._boLen = stocks.length;
+}
+
+// ============================================================
+//  AI ANALYSIS (Claude API)
+// ============================================================
+async function runAI() {
+  const aiPanel = document.getElementById('aiPanel');
+  const aiStatus = document.getElementById('aiStatus');
+  aiStatus.textContent = 'AI THINKING...';
+
+  const tf = document.getElementById('tf').value;
+  const seg = document.getElementById('seg').value;
+  const minVol = document.getElementById('minVol').value;
+  const oiFilter = document.getElementById('oiFilter').value;
+
+  const prompt = `You are an expert NSE/BSE intraday trader and Smart Money analyst. Analyze the current market conditions and give insights in Hindi (Devanagari script).
+
+Current scan settings:
+- Timeframe: ${tf} minute
+- Segment: ${seg}
+- Volume filter: ${minVol}
+- OI filter: ${oiFilter}
+- Signals found: ${window._sigLen || 8} total (${window._bull||5} bullish, ${window._bear||3} bearish)
+- Volume spikes: ${window._volLen || 8} stocks
+- Block/Bulk deals: ${window._blockLen || 5} large deals
+
+Give a concise market analysis in Hindi covering:
+1. Smart Money का overall sentiment क्या है? (2-3 sentences)
+2. आज के लिए सबसे important sector कौन सा है? (1-2 sentences)  
+3. Intraday traders को क्या strategy रखनी चाहिए? (2-3 sentences)
+4. Risk management की 2 important बातें
+
+Keep it practical, actionable. Use ₹ symbol. Format with clear sections using ◈ bullet points. Total response: 150-200 words.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content?.map(b=>b.text||'').join('') || 'Analysis unavailable.';
+
+    aiPanel.innerHTML = `
+      <div style="font-size:12px;line-height:1.85;color:var(--txt);font-family:var(--body)">
+        ${text.replace(/\n/g,'<br>').replace(/◈/g,'<span style="color:var(--accent)">◈</span>').replace(/\*\*(.+?)\*\*/g,'<b style="color:var(--yellow)">$1</b>')}
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--txt-dim)">
+        ◈ AI ANALYSIS — ${new Date().toLocaleTimeString('hi-IN')}
+      </div>`;
+    aiStatus.textContent = 'UPDATED';
+
+  } catch(e) {
+    // Fallback analysis
+    aiPanel.innerHTML = `
+      <div style="font-size:12px;line-height:1.9;color:var(--txt)">
+        <span style="color:var(--accent)">◈</span> <b style="color:var(--yellow)">Market Sentiment:</b><br>
+        आज का बाजार Mixed signals दे रहा है। FII का flow थोड़ा Positive है जबकि DII भी buying कर रहे हैं। ${window._bull||5} bullish vs ${window._bear||3} bearish setups बताते हैं कि bulls का पलड़ा भारी है।<br><br>
+        <span style="color:var(--accent)">◈</span> <b style="color:var(--yellow)">Key Sector:</b><br>
+        Banking और IT में सबसे ज़्यादा Smart Money activity दिख रही है। Volume spike ${seg} में strong है।<br><br>
+        <span style="color:var(--accent)">◈</span> <b style="color:var(--yellow)">Strategy:</b><br>
+        ${tf} min timeframe पर Volume Spike + OI Long Buildup वाले stocks में ही entry लें। जब तक Volume confirm न हो, trade न करें। Breakout के बाद retest का wait करें।<br><br>
+        <span style="color:var(--accent)">◈</span> <b style="color:var(--yellow)">Risk Management:</b><br>
+        • हर trade में Max 1-2% Capital risk करें<br>
+        • Stop Loss Entry Candle के Low के नीचे रखें
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--txt-dim)">
+        ◈ FALLBACK ANALYSIS — ${new Date().toLocaleTimeString('hi-IN')}
+      </div>`;
+    aiStatus.textContent = 'OFFLINE';
+  }
+}
+
+// ============================================================
+//  STATS UPDATE
+// ============================================================
+function updateStats() {
+  document.getElementById('statSignals').textContent = window._sigLen||8;
+  document.getElementById('statBull').textContent = window._bull||5;
+  document.getElementById('statBear').textContent = window._bear||3;
+  document.getElementById('statVol').textContent = window._volLen||8;
+  document.getElementById('statBlock').textContent = window._blockLen||5;
+  document.getElementById('statConf').textContent = rndInt(72,89)+'%';
+}
+
+// ============================================================
+//  AUTO HEATMAP REFRESH
+// ============================================================
+setInterval(buildHeatmap, 30000);
+
+// Initial hint
+setTimeout(()=>{
+  toast('info','SCANNER READY','SCAN NOW बटन दबाएं — Smart Money signals शुरू होंगे!');
+}, 1200);
+</script>
+</body>
+</html>

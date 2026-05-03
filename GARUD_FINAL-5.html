@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🔱 GARUD — Maa Aadishakti Group</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080808;--card:#101010;--card2:#141414;
+  --bdr:#eab308;--bdr2:#2563eb;
+  --gold:#f59e0b;--amber:#d97706;--orange:#fb923c;
+  --text:#fbbf24;--sub:#fcd34d;--dim:rgba(251,191,36,0.45);
+  --green:#34d399;--red:#f87171;--blue:#60a5fa;
+}
+html,body{height:100%;overflow:hidden;font-family:'Courier New',monospace;background:var(--bg);color:var(--text)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#000}
+::-webkit-scrollbar-thumb{background:var(--bdr)}
+
+/* APP SHELL */
+#app{display:flex;flex-direction:column;height:100vh;width:100%}
+
+/* TOP BAR */
+#topbar{
+  flex-shrink:0;
+  background:linear-gradient(90deg,#050505,#0f0800);
+  border-bottom:3px solid var(--bdr);
+  padding:0 16px;
+  height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand-trident{font-size:30px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+.brand-name{font-size:22px;font-weight:900;color:var(--gold);letter-spacing:4px;line-height:1}
+.brand-sub{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.topnav{display:flex;gap:2px}
+.tnb{
+  background:transparent;border:2px solid transparent;
+  color:var(--dim);padding:6px 12px;font-size:10px;font-weight:700;
+  cursor:pointer;letter-spacing:1px;text-transform:uppercase;
+  font-family:'Courier New',monospace;transition:all .2s;
+}
+.tnb:hover{border-color:var(--bdr);color:var(--text)}
+.tnb.on{border-color:var(--gold);color:var(--gold);background:rgba(245,158,11,.1)}
+
+/* SCROLL AREA */
+#content{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* PAGES */
+.pg{display:none;padding:18px;animation:fin .25s ease}
+.pg.on{display:block}
+@keyframes fin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* BOTTOM NAV */
+#botnav{
+  flex-shrink:0;
+  background:#050505;border-top:3px solid var(--bdr);
+  display:flex;
+}
+.bnb{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:9px 2px 7px;gap:3px;
+  border:none;border-right:1px solid var(--bdr2);
+  background:transparent;color:var(--dim);
+  font-size:9px;font-weight:700;text-transform:uppercase;
+  cursor:pointer;font-family:'Courier New',monospace;
+  letter-spacing:.5px;transition:all .2s;
+}
+.bnb:last-child{border-right:none}
+.bnb .ic{font-size:19px}
+.bnb:hover{background:rgba(245,158,11,.08);color:var(--text)}
+.bnb.on{background:linear-gradient(180deg,var(--amber),var(--orange));color:#000}
+
+/* CARD */
+.card{border:2px solid var(--bdr);background:var(--card);margin-bottom:14px}
+.card:hover{border-color:rgba(245,158,11,.6)}
+.ch{
+  padding:10px 16px;border-bottom:2px solid var(--bdr);
+  color:var(--gold);font-weight:900;font-size:11px;
+  letter-spacing:2px;text-transform:uppercase;
+  background:rgba(234,179,8,.06);display:flex;align-items:center;gap:8px;
+}
+.cb{padding:16px}
+
+/* FORM */
+.f{margin-bottom:13px}
+.f:last-child{margin-bottom:0}
+.f label{
+  display:block;color:var(--gold);font-size:10px;font-weight:700;
+  margin-bottom:7px;text-transform:uppercase;letter-spacing:1px;
+}
+.f input,.f select,.f textarea{
+  width:100%;padding:11px 13px;
+  background:#000;border:2px solid #1d4ed8;
+  color:var(--sub);font-family:'Courier New',monospace;font-size:13px;outline:none;
+  transition:border-color .2s,background .2s;
+}
+.f input:focus,.f select,.f textarea:focus{border-color:var(--gold);background:#080400}
+.f select{color:var(--sub);background:#000}
+.f textarea{resize:vertical;min-height:80px}
+.f .hint{color:var(--dim);font-size:10px;margin-top:5px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* BUTTONS */
+.btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--amber),var(--orange));
+  color:#000;border:2px solid var(--gold);
+  font-weight:900;font-family:'Courier New',monospace;
+  font-size:12px;letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;margin-top:4px;
+}
+.btn:hover{opacity:.9;box-shadow:0 0 18px rgba(245,158,11,.35)}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-o{
+  background:transparent;border:2px solid var(--bdr);
+  color:var(--gold);padding:10px 16px;font-size:11px;
+  font-weight:700;cursor:pointer;font-family:'Courier New',monospace;
+  letter-spacing:1px;text-transform:uppercase;transition:all .2s;
+}
+.btn-o:hover{background:rgba(245,158,11,.1);border-color:var(--gold)}
+
+/* STATUS */
+.status{
+  padding:12px 16px;margin-bottom:14px;border:2px solid var(--bdr);
+  font-weight:700;font-size:12px;text-align:center;display:none;
+}
+.status.show{display:block}
+.status.ok{background:rgba(52,211,153,.12);border-color:var(--green);color:var(--green)}
+.status.err{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red)}
+.status.load{background:rgba(245,158,11,.12);border-color:var(--gold);color:var(--gold)}
+
+/* RESULT METRICS */
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.metric-card{border:2px solid var(--bdr);background:var(--card2);padding:14px}
+.metric-label{color:var(--dim);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.metric-val{font-size:22px;font-weight:900}
+.metric-val.g{color:var(--green)}
+.metric-val.r{color:var(--red)}
+.metric-val.y{color:var(--gold)}
+
+/* PNL GRID */
+.pnl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.pnl-card{border:2px solid var(--bdr);padding:14px;background:var(--card2)}
+.pnl-card.profit{border-color:var(--green)}
+.pnl-card.loss{border-color:var(--red)}
+.pnl-card.net{border-color:var(--gold)}
+.pnl-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.pnl-val{font-size:18px;font-weight:900}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{background:rgba(37,99,235,.2);border:1px solid var(--bdr2);padding:9px 10px;color:var(--gold);text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.tbl td{border:1px solid var(--bdr2);padding:9px 10px;color:var(--sub)}
+.tbl tr:nth-child(even) td{background:rgba(0,0,0,.3)}
+
+/* STATUS DOT */
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;animation:blink 2s infinite}
+.dot.g{background:var(--green)}
+.dot.r{background:var(--red)}
+.dot.y{background:var(--gold)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* CHIPS */
+.chip{
+  display:inline-block;padding:5px 12px;border:1px solid var(--bdr);
+  color:var(--sub);font-size:10px;cursor:pointer;margin:3px;
+  font-family:'Courier New',monospace;font-weight:700;transition:all .2s;
+}
+.chip:hover{background:rgba(245,158,11,.15);border-color:var(--gold);color:var(--gold)}
+.chip.sel{background:var(--gold);color:#000;border-color:var(--gold)}
+
+/* ROW ITEM */
+.row-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid rgba(37,99,235,.35);
+}
+.row-item:last-child{border-bottom:none}
+.row-label{color:var(--dim);font-size:11px;font-weight:700;text-transform:uppercase}
+.row-val{color:var(--sub);font-size:12px;font-weight:700;font-family:'Courier New',monospace}
+
+/* DIVIDER */
+.div{height:2px;background:linear-gradient(90deg,transparent,var(--bdr),transparent);margin:16px 0}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .topnav{display:none}
+  .brand-name{font-size:18px}
+  .g3{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="brand" onclick="nav('home')">
+      <div class="brand-trident">🔱</div>
+      <div>
+        <div class="brand-name">GARUD</div>
+        <div class="brand-sub">Maa Aadishakti Group</div>
+      </div>
+    </div>
+    <div class="topnav">
+      <button class="tnb on"   id="tn-home"     onclick="nav('home')">Home</button>
+      <button class="tnb"      id="tn-backtest"  onclick="nav('backtest')">BackTest</button>
+      <button class="tnb"      id="tn-prices"    onclick="nav('prices')">Prices</button>
+      <button class="tnb"      id="tn-results"   onclick="nav('results')">Results</button>
+      <button class="tnb"      id="tn-help"      onclick="nav('help')">Help</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ═══════ PAGE: HOME ═══════ -->
+    <div id="pg-home" class="pg on">
+      <div class="card">
+        <div class="ch">🔱 GARUD — BackTesting Platform</div>
+        <div class="cb">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div>
+              <div style="font-size:18px;font-weight:900;color:var(--gold);letter-spacing:2px">Jai Maa Aadishakti 🙏</div>
+              <div style="color:var(--dim);font-size:11px;margin-top:4px">Real-time stock data · Yahoo Finance connected</div>
+            </div>
+            <div style="font-size:48px">🦅</div>
+          </div>
+          <div class="div"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-o" onclick="nav('backtest')">📊 New BackTest</button>
+            <button class="btn-o" onclick="nav('prices')">💹 Live Prices</button>
+            <button class="btn-o" onclick="nav('results')">📈 Results</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">⚡ System Status</div>
+        <div class="cb">
+          <div class="row-item">
+            <span class="row-label">Platform</span>
+            <span class="row-val"><span class="dot g"></span>ONLINE</span>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Yahoo Finance API</span>
+            <span class="row-val" id="api-status"><span class="dot y"></span>CHECKING...</span>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Data Feed</span>
+            <span class="row-val"><span class="dot g"></span>LIVE</span>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Version</span>
+            <span class="row-val">GARUD v2.0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">📊 Last BackTest Summary</div>
+        <div class="cb">
+          <div id="home-summary" style="color:var(--dim);font-size:12px;padding:8px 0">No backtest run yet. Run a test to see summary here.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">📋 Features</div>
+        <div class="cb" style="font-size:12px;line-height:2">
+          <div>✓ &nbsp;Yahoo Finance — Real-time &amp; Historical Data</div>
+          <div>✓ &nbsp;SMA Crossover Backtest Strategy</div>
+          <div>✓ &nbsp;Win/Loss Calculation with Metrics</div>
+          <div>✓ &nbsp;Trade Log with Date-wise Results</div>
+          <div>✓ &nbsp;Download CSV Report</div>
+          <div>✓ &nbsp;Live Stock Price Lookup</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ PAGE: BACKTEST ═══════ -->
+    <div id="pg-backtest" class="pg">
+      <div id="bt-status" class="status"></div>
+
+      <div class="card">
+        <div class="ch">🎯 Test Identity</div>
+        <div class="cb">
+          <div class="f">
+            <label>Test Name</label>
+            <input type="text" id="testName" placeholder="My SMA Strategy">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">📈 Stock Symbol</div>
+        <div class="cb">
+          <div class="f">
+            <label>Yahoo Finance Symbol</label>
+            <input type="text" id="symbol" value="SBIN.NS" placeholder="e.g. SBIN.NS">
+            <div class="hint">NSE → SBIN.NS &nbsp;|&nbsp; BSE → SBIN.BO &nbsp;|&nbsp; US → AAPL</div>
+          </div>
+          <div style="margin-top:4px">
+            <span class="chip sel" onclick="setChip(this,'SBIN.NS')">SBIN.NS</span>
+            <span class="chip" onclick="setChip(this,'TCS.NS')">TCS.NS</span>
+            <span class="chip" onclick="setChip(this,'INFY.NS')">INFY.NS</span>
+            <span class="chip" onclick="setChip(this,'RELIANCE.NS')">RELIANCE.NS</span>
+            <span class="chip" onclick="setChip(this,'WIPRO.NS')">WIPRO.NS</span>
+            <span class="chip" onclick="setChip(this,'HDFCBANK.NS')">HDFCBANK.NS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">📅 Date & Time</div>
+        <div class="cb">
+          <div class="g2">
+            <div class="f"><label>Start Date</label><input type="date" id="startDate"></div>
+            <div class="f"><label>End Date</label><input type="date" id="endDate"></div>
+          </div>
+          <div class="g2" style="margin-top:10px">
+            <div class="f"><label>Start Time</label><input type="time" id="startTime" value="09:15"></div>
+            <div class="f"><label>End Time</label><input type="time" id="endTime" value="15:30"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">💰 Investment</div>
+        <div class="cb">
+          <div class="g2">
+            <div class="f"><label>Capital (₹)</label><input type="number" id="capital" value="100000"></div>
+            <div class="f"><label>Quantity</label><input type="number" id="quantity" value="100"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">⚙️ Strategy</div>
+        <div class="cb">
+          <div class="g2">
+            <div class="f">
+              <label>Strategy Type</label>
+              <select id="strategy">
+                <option value="sma">SMA Crossover</option>
+                <option value="ema">EMA Crossover</option>
+              </select>
+            </div>
+            <div class="f"><label>SMA Period (days)</label><input type="number" id="smaPeriod" value="20" min="5" max="200"></div>
+          </div>
+          <div class="f">
+            <label>Stop Loss %</label>
+            <input type="number" id="stopLoss" value="2" min="0" max="20" step="0.5">
+          </div>
+          <div class="f">
+            <label>Notes</label>
+            <textarea id="notes" placeholder="Strategy notes..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn" id="runBtn" onclick="runBacktest()">▶ RUN BACKTEST WITH YAHOO FINANCE DATA</button>
+    </div>
+
+    <!-- ═══════ PAGE: PRICES ═══════ -->
+    <div id="pg-prices" class="pg">
+      <div class="card">
+        <div class="ch">💹 Live Price Lookup</div>
+        <div class="cb">
+          <div class="f">
+            <label>Enter Symbol</label>
+            <div style="display:flex;gap:10px">
+              <input type="text" id="priceSymbol" value="SBIN.NS" style="margin-bottom:0">
+              <button class="btn-o" onclick="getPrice()" style="white-space:nowrap;padding:11px 16px">GET</button>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <span class="chip sel" onclick="setPrice('SBIN.NS')">SBIN.NS</span>
+            <span class="chip" onclick="setPrice('TCS.NS')">TCS.NS</span>
+            <span class="chip" onclick="setPrice('INFY.NS')">INFY.NS</span>
+            <span class="chip" onclick="setPrice('RELIANCE.NS')">RELIANCE.NS</span>
+            <span class="chip" onclick="setPrice('AAPL')">AAPL</span>
+            <span class="chip" onclick="setPrice('GOOGL')">GOOGL</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="price-status" class="status"></div>
+
+      <div id="price-result" style="display:none">
+        <div class="card">
+          <div class="ch" id="price-sym-head">Stock Info</div>
+          <div class="cb">
+            <div class="g2" style="margin-bottom:14px">
+              <div style="border:2px solid var(--gold);padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--dim);margin-bottom:6px">CURRENT PRICE</div>
+                <div style="font-size:26px;font-weight:900;color:var(--gold)" id="p-price">—</div>
+              </div>
+              <div style="border:2px solid var(--bdr);padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--dim);margin-bottom:6px">MARKET CAP</div>
+                <div style="font-size:16px;font-weight:900;color:var(--sub)" id="p-cap">—</div>
+              </div>
+            </div>
+            <div class="row-item"><span class="row-label">Day High</span><span class="row-val" id="p-high">—</span></div>
+            <div class="row-item"><span class="row-label">Day Low</span><span class="row-val" id="p-low">—</span></div>
+            <div class="row-item"><span class="row-label">52 Week High</span><span class="row-val" id="p-52h">—</span></div>
+            <div class="row-item"><span class="row-label">52 Week Low</span><span class="row-val" id="p-52l">—</span></div>
+            <div class="row-item"><span class="row-label">Change</span><span class="row-val" id="p-chg">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ PAGE: RESULTS ═══════ -->
+    <div id="pg-results" class="pg">
+      <div id="results-empty" class="card">
+        <div class="ch">📊 No Results Yet</div>
+        <div class="cb">
+          <p style="color:var(--dim);font-size:12px;margin-bottom:14px">Run a backtest first to see results here.</p>
+          <button class="btn-o" onclick="nav('backtest')">Go to BackTest →</button>
+        </div>
+      </div>
+      <div id="results-content" style="display:none">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- ═══════ PAGE: HELP ═══════ -->
+    <div id="pg-help" class="pg">
+      <div class="card">
+        <div class="ch">❓ How to Use GARUD</div>
+        <div class="cb" style="font-size:12px;line-height:2">
+          <div style="color:var(--gold);font-weight:900;margin-bottom:4px">Step 1 — BackTest Page</div>
+          <div style="color:var(--sub);margin-bottom:14px">Enter stock symbol, date range, investment, and strategy settings.</div>
+          <div style="color:var(--gold);font-weight:900;margin-bottom:4px">Step 2 — Run BackTest</div>
+          <div style="color:var(--sub);margin-bottom:14px">Click RUN. System fetches real historical data from Yahoo Finance and simulates your strategy.</div>
+          <div style="color:var(--gold);font-weight:900;margin-bottom:4px">Step 3 — View Results</div>
+          <div style="color:var(--sub)">See win rate, profit/loss, trade log. Download CSV report.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">📍 Stock Symbols</div>
+        <div class="cb">
+          <table class="tbl">
+            <tr><th>Market</th><th>Format</th><th>Example</th></tr>
+            <tr><td>India NSE</td><td>SYMBOL.NS</td><td>SBIN.NS</td></tr>
+            <tr><td>India BSE</td><td>SYMBOL.BO</td><td>SBIN.BO</td></tr>
+            <tr><td>US Market</td><td>SYMBOL</td><td>AAPL</td></tr>
+            <tr><td>Crypto</td><td>SYMBOL-USD</td><td>BTC-USD</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">⚡ Strategy Guide</div>
+        <div class="cb" style="font-size:12px;line-height:1.8">
+          <div style="color:var(--gold);font-weight:900">SMA Crossover</div>
+          <div style="color:var(--sub);margin-bottom:10px">Buy when price crosses above SMA. Sell when price crosses below SMA.</div>
+          <div style="color:var(--gold);font-weight:900">Stop Loss</div>
+          <div style="color:var(--sub)">Automatically closes trade if loss exceeds the set percentage.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">🔱 About</div>
+        <div class="cb" style="font-size:12px;line-height:2;color:var(--sub)">
+          <div>GARUD v2.0 — BackTesting Platform</div>
+          <div>Maa Aadishakti Group 🙏</div>
+          <div>Data Source: Yahoo Finance API</div>
+          <div style="color:var(--dim);font-size:10px;margin-top:8px">Note: Yahoo Finance data has slight delay. Not for live trading signals.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <div id="botnav">
+    <button class="bnb on" id="bn-home"     onclick="nav('home')">    <span class="ic">🏠</span>Home    </button>
+    <button class="bnb"    id="bn-backtest" onclick="nav('backtest')"><span class="ic">📊</span>BackTest</button>
+    <button class="bnb"    id="bn-prices"   onclick="nav('prices')">  <span class="ic">💹</span>Prices  </button>
+    <button class="bnb"    id="bn-results"  onclick="nav('results')"> <span class="ic">📈</span>Results </button>
+    <button class="bnb"    id="bn-help"     onclick="nav('help')">    <span class="ic">❓</span>Help    </button>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+const PAGES = ['home','backtest','prices','results','help'];
+
+function nav(id){
+  PAGES.forEach(p=>{
+    document.getElementById('pg-'+p).classList.toggle('on', p===id);
+    const tn = document.getElementById('tn-'+p);
+    const bn = document.getElementById('bn-'+p);
+    if(tn) tn.classList.toggle('on', p===id);
+    if(bn) bn.classList.toggle('on', p===id);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// STATUS HELPERS
+// ═══════════════════════════════════════════════
+function setStatus(id, msg, type){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status show ' + type;
+}
+function hideStatus(id){ document.getElementById(id).className='status'; }
+
+// ═══════════════════════════════════════════════
+// INIT — SET DATES + CHECK API
+// ═══════════════════════════════════════════════
+window.addEventListener('load', ()=>{
+  const today = new Date();
+  const past  = new Date(today - 90*864e5);
+  document.getElementById('endDate').valueAsDate   = today;
+  document.getElementById('startDate').valueAsDate = past;
+
+  // Test API availability
+  fetch('https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAPL?modules=price')
+    .then(r=>{
+      const el = document.getElementById('api-status');
+      el.innerHTML = r.ok
+        ? '<span class="dot g"></span>CONNECTED'
+        : '<span class="dot r"></span>LIMITED';
+    })
+    .catch(()=>{
+      document.getElementById('api-status').innerHTML='<span class="dot r"></span>BLOCKED (CORS)';
+    });
+});
+
+// ═══════════════════════════════════════════════
+// CHIP SELECTION
+// ═══════════════════════════════════════════════
+function setChip(el, sym){
+  document.querySelectorAll('#pg-backtest .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('symbol').value = sym;
+}
+function setPrice(sym){
+  document.querySelectorAll('#pg-prices .chip').forEach(c=>c.classList.remove('sel'));
+  event.target.classList.add('sel');
+  document.getElementById('priceSymbol').value = sym;
+}
+
+// ═══════════════════════════════════════════════
+// YAHOO FINANCE — HISTORICAL DATA
+// ═══════════════════════════════════════════════
+async function fetchHistorical(symbol, startDate, endDate){
+  const p1 = Math.floor(new Date(startDate).getTime()/1000);
+  const p2 = Math.floor(new Date(endDate).getTime()/1000);
+
+  // Try CORS proxy fallback
+  const urls = [
+    `https://query1.finance.yahoo.com/v7/finance/download/${symbol}?period1=${p1}&period2=${p2}&interval=1d&events=history`,
+    `https://query2.finance.yahoo.com/v7/finance/download/${symbol}?period1=${p1}&period2=${p2}&interval=1d&events=history`,
+  ];
+
+  for(const url of urls){
+    try{
+      const res = await fetch(url);
+      if(!res.ok) continue;
+      const csv = await res.text();
+      return parseCSV(csv);
+    }catch(e){ continue; }
+  }
+  return null;
+}
+
+function parseCSV(csv){
+  const lines = csv.trim().split('\n');
+  if(lines.length < 2) return [];
+  const data = [];
+  for(let i=1;i<lines.length;i++){
+    const p = lines[i].split(',');
+    if(p.length < 5) continue;
+    const close = parseFloat(p[4]);
+    if(isNaN(close)) continue;
+    data.push({ date:p[0], open:parseFloat(p[1]), high:parseFloat(p[2]), low:parseFloat(p[3]), close, vol:parseInt(p[6]||0) });
+  }
+  return data;
+}
+
+// ═══════════════════════════════════════════════
+// YAHOO FINANCE — LIVE PRICE
+// ═══════════════════════════════════════════════
+async function fetchPrice(symbol){
+  const urls = [
+    `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=price`,
+    `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=price`,
+  ];
+  for(const url of urls){
+    try{
+      const res = await fetch(url);
+      if(!res.ok) continue;
+      const json = await res.json();
+      const pr = json?.quoteSummary?.result?.[0]?.price;
+      if(!pr) continue;
+      return {
+        symbol,
+        price: pr.regularMarketPrice?.raw || 0,
+        high:  pr.regularMarketDayHigh?.raw || 0,
+        low:   pr.regularMarketDayLow?.raw || 0,
+        h52:   pr.fiftyTwoWeekHigh?.raw || 0,
+        l52:   pr.fiftyTwoWeekLow?.raw || 0,
+        cap:   pr.marketCap?.raw || 0,
+        chg:   pr.regularMarketChange?.raw || 0,
+        chgP:  pr.regularMarketChangePercent?.raw || 0,
+        name:  pr.shortName || symbol,
+        curr:  pr.currency || '₹',
+      };
+    }catch(e){ continue; }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+// SMA CALCULATION
+// ═══════════════════════════════════════════════
+function sma(arr, n){
+  const out = [];
+  for(let i=n-1;i<arr.length;i++){
+    let s=0; for(let j=0;j<n;j++) s+=arr[i-j];
+    out.push(s/n);
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════════════
+// RUN BACKTEST
+// ═══════════════════════════════════════════════
+let lastResult = null;
+
+async function runBacktest(){
+  const symbol    = document.getElementById('symbol').value.trim();
+  const startDate = document.getElementById('startDate').value;
+  const endDate   = document.getElementById('endDate').value;
+  const period    = parseInt(document.getElementById('smaPeriod').value) || 20;
+  const capital   = parseFloat(document.getElementById('capital').value) || 100000;
+  const qty       = parseInt(document.getElementById('quantity').value) || 100;
+  const stopL     = parseFloat(document.getElementById('stopLoss').value) || 2;
+  const testName  = document.getElementById('testName').value || 'Unnamed Test';
+
+  if(!symbol||!startDate||!endDate){
+    setStatus('bt-status','❌ Fill all required fields!','err'); return;
+  }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  setStatus('bt-status','🔄 Fetching historical data from Yahoo Finance...','load');
+
+  const data = await fetchHistorical(symbol, startDate, endDate);
+
+  if(!data || data.length===0){
+    setStatus('bt-status','❌ No data found. Check symbol or try again.','err');
+    btn.disabled=false; return;
+  }
+
+  setStatus('bt-status',`✓ Got ${data.length} data points. Running strategy...`,'load');
+
+  // Run SMA strategy
+  const closes = data.map(d=>d.close);
+  const avgArr = sma(closes, period);
+
+  let trades=[], inTrade=false, buyPrice=0, buyDate='', totProfit=0, totLoss=0;
+
+  for(let i=period;i<data.length;i++){
+    const price = closes[i];
+    const avg   = avgArr[i-period];
+
+    if(!inTrade && price>avg){
+      inTrade=true; buyPrice=price; buyDate=data[i].date;
+    } else if(inTrade){
+      const pnl = (price - buyPrice) * qty;
+      const pct = ((price-buyPrice)/buyPrice)*100;
+
+      const stopHit = pct <= -stopL;
+      const sellSig = price < avg;
+
+      if(sellSig || stopHit){
+        inTrade=false;
+        const win = pnl>0;
+        if(win) totProfit+=pnl; else totLoss+=Math.abs(pnl);
+        trades.push({
+          buy: buyDate, sell: data[i].date,
+          buyP: buyPrice.toFixed(2), sellP: price.toFixed(2),
+          pnl: pnl.toFixed(2), win,
+          note: stopHit?'SL HIT':'SMA EXIT',
+        });
+      }
+    }
+  }
+
+  const wins     = trades.filter(t=>t.win).length;
+  const losses   = trades.length - wins;
+  const winRate  = trades.length ? ((wins/trades.length)*100).toFixed(1) : 0;
+  const netPnl   = totProfit - totLoss;
+  const roi      = ((netPnl/capital)*100).toFixed(2);
+  const pf       = totLoss>0 ? (totProfit/totLoss).toFixed(2) : '∞';
+
+  lastResult = { testName, symbol, startDate, endDate, period, capital, qty, stopL,
+    total:trades.length, wins, losses, winRate,
+    profit:totProfit.toFixed(2), loss:totLoss.toFixed(2), net:netPnl.toFixed(2),
+    roi, pf, dataPoints:data.length, trades };
+
+  setStatus('bt-status',`✓ BackTest Complete! ${trades.length} trades found.`,'ok');
+  btn.disabled=false;
+
+  showResults(lastResult);
+  updateHomeSummary(lastResult);
+  nav('results');
+}
+
+// ═══════════════════════════════════════════════
+// SHOW RESULTS
+// ═══════════════════════════════════════════════
+function showResults(R){
+  document.getElementById('results-empty').style.display   = 'none';
+  document.getElementById('results-content').style.display = 'block';
+
+  const netColor = parseFloat(R.net)>=0 ? 'g' : 'r';
+
+  const tradeRows = R.trades.slice(-20).reverse().map(t=>`
+    <tr>
+      <td>${t.buy}</td><td>₹${t.buyP}</td>
+      <td>${t.sell}</td><td>₹${t.sellP}</td>
+      <td style="color:${t.win?'var(--green)':'var(--red)'}">₹${t.pnl}</td>
+      <td>${t.note}</td>
+    </tr>`).join('');
+
+  document.getElementById('results-content').innerHTML = `
+    <div class="card">
+      <div class="ch">✅ BackTest Complete — ${R.testName}</div>
+      <div class="cb">
+        <div class="row-item"><span class="row-label">Symbol</span><span class="row-val">${R.symbol}</span></div>
+        <div class="row-item"><span class="row-label">Date Range</span><span class="row-val">${R.startDate} → ${R.endDate}</span></div>
+        <div class="row-item"><span class="row-label">Data Points</span><span class="row-val">${R.dataPoints} days</span></div>
+        <div class="row-item"><span class="row-label">Strategy</span><span class="row-val">SMA(${R.period}) | SL ${R.stopL}%</span></div>
+        <div class="row-item"><span class="row-label">Capital</span><span class="row-val">₹${parseFloat(R.capital).toLocaleString('en-IN')}</span></div>
+      </div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-label">Total Trades</div><div class="metric-val y">${R.total}</div></div>
+      <div class="metric-card"><div class="metric-label">Win Rate</div><div class="metric-val y">${R.winRate}%</div></div>
+      <div class="metric-card"><div class="metric-label">Winning</div><div class="metric-val g">${R.wins}</div></div>
+      <div class="metric-card"><div class="metric-label">Losing</div><div class="metric-val r">${R.losses}</div></div>
+    </div>
+
+    <div class="pnl-grid">
+      <div class="pnl-card profit"><div class="pnl-label" style="color:var(--green)">Total Profit</div><div class="pnl-val" style="color:var(--green)">₹${parseFloat(R.profit).toLocaleString('en-IN')}</div></div>
+      <div class="pnl-card loss"><div class="pnl-label" style="color:var(--red)">Total Loss</div><div class="pnl-val" style="color:var(--red)">₹${parseFloat(R.loss).toLocaleString('en-IN')}</div></div>
+      <div class="pnl-card net"><div class="pnl-label" style="color:var(--gold)">Net P&L</div><div class="pnl-val" style="color:var(--${netColor==='g'?'green':'red'})">₹${parseFloat(R.net).toLocaleString('en-IN')}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="ch">📐 Performance Metrics</div>
+      <div class="cb">
+        <div class="g2">
+          <div style="border-left:3px solid var(--gold);padding-left:12px;margin-bottom:12px">
+            <div style="color:var(--dim);font-size:10px;font-weight:700;text-transform:uppercase">Profit Factor</div>
+            <div style="font-size:22px;font-weight:900;color:var(--gold);margin-top:4px">${R.pf}</div>
+          </div>
+          <div style="border-left:3px solid var(--gold);padding-left:12px;margin-bottom:12px">
+            <div style="color:var(--dim);font-size:10px;font-weight:700;text-transform:uppercase">ROI</div>
+            <div style="font-size:22px;font-weight:900;color:${parseFloat(R.roi)>=0?'var(--green)':'var(--red)'};margin-top:4px">${R.roi}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">📋 Trade Log (Last 20)</div>
+      <div class="cb" style="overflow-x:auto">
+        <table class="tbl">
+          <tr><th>Buy Date</th><th>Buy ₹</th><th>Sell Date</th><th>Sell ₹</th><th>P&L</th><th>Exit</th></tr>
+          ${tradeRows || '<tr><td colspan="6" style="text-align:center;color:var(--dim)">No trades found</td></tr>'}
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:4px">
+      <button class="btn-o" onclick="nav('backtest')" style="flex:1">← New Test</button>
+      <button class="btn-o" onclick="downloadCSV()" style="flex:1">⬇ Download CSV</button>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// UPDATE HOME SUMMARY
+// ═══════════════════════════════════════════════
+function updateHomeSummary(R){
+  const c = parseFloat(R.net)>=0?'var(--green)':'var(--red)';
+  document.getElementById('home-summary').innerHTML=`
+    <div class="g2" style="margin-bottom:10px">
+      <div style="border:2px solid var(--bdr);padding:10px">
+        <div style="color:var(--dim);font-size:9px;font-weight:700;text-transform:uppercase">Test</div>
+        <div style="font-size:12px;font-weight:900;margin-top:4px">${R.testName}</div>
+      </div>
+      <div style="border:2px solid var(--bdr);padding:10px">
+        <div style="color:var(--dim);font-size:9px;font-weight:700;text-transform:uppercase">Symbol</div>
+        <div style="font-size:12px;font-weight:900;margin-top:4px">${R.symbol}</div>
+      </div>
+      <div style="border:2px solid var(--bdr);padding:10px">
+        <div style="color:var(--dim);font-size:9px;font-weight:700;text-transform:uppercase">Win Rate</div>
+        <div style="font-size:18px;font-weight:900;color:var(--gold);margin-top:4px">${R.winRate}%</div>
+      </div>
+      <div style="border:2px solid var(--bdr);padding:10px">
+        <div style="color:var(--dim);font-size:9px;font-weight:700;text-transform:uppercase">Net P&L</div>
+        <div style="font-size:18px;font-weight:900;color:${c};margin-top:4px">₹${parseFloat(R.net).toLocaleString('en-IN')}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// DOWNLOAD CSV
+// ═══════════════════════════════════════════════
+function downloadCSV(){
+  if(!lastResult) return;
+  const R = lastResult;
+  let csv = `GARUD BackTest Report — Maa Aadishakti Group\n`;
+  csv += `Test Name,${R.testName}\nSymbol,${R.symbol}\nDate,${R.startDate} to ${R.endDate}\n`;
+  csv += `Capital,${R.capital}\nStrategy,SMA(${R.period})\n\n`;
+  csv += `Total Trades,${R.total}\nWins,${R.wins}\nLosses,${R.losses}\nWin Rate,${R.winRate}%\n`;
+  csv += `Total Profit,${R.profit}\nTotal Loss,${R.loss}\nNet P&L,${R.net}\nROI,${R.roi}%\nProfit Factor,${R.pf}\n\n`;
+  csv += `Buy Date,Buy Price,Sell Date,Sell Price,P&L,Exit Type\n`;
+  R.trades.forEach(t=>{ csv+=`${t.buy},${t.buyP},${t.sell},${t.sellP},${t.pnl},${t.note}\n`; });
+
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `GARUD_${R.symbol}_${R.startDate}.csv`;
+  a.click();
+}
+
+// ═══════════════════════════════════════════════
+// LIVE PRICE LOOKUP
+// ═══════════════════════════════════════════════
+async function getPrice(){
+  const sym = document.getElementById('priceSymbol').value.trim();
+  if(!sym){ setStatus('price-status','❌ Enter a symbol!','err'); return; }
+
+  setStatus('price-status','🔄 Fetching price from Yahoo Finance...','load');
+  document.getElementById('price-result').style.display='none';
+
+  const d = await fetchPrice(sym);
+
+  if(!d){
+    setStatus('price-status','❌ Symbol not found or API blocked. Try another symbol.','err');
+    return;
+  }
+
+  hideStatus('price-status');
+  document.getElementById('price-sym-head').textContent = `🔱 ${d.name} (${d.symbol})`;
+  document.getElementById('p-price').textContent = `${d.curr} ${d.price.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+  document.getElementById('p-high').textContent  = `${d.curr} ${d.high.toFixed(2)}`;
+  document.getElementById('p-low').textContent   = `${d.curr} ${d.low.toFixed(2)}`;
+  document.getElementById('p-52h').textContent   = `${d.curr} ${d.h52.toFixed(2)}`;
+  document.getElementById('p-52l').textContent   = `${d.curr} ${d.l52.toFixed(2)}`;
+
+  const chgColor = d.chg>=0?'var(--green)':'var(--red)';
+  document.getElementById('p-chg').innerHTML = `<span style="color:${chgColor}">${d.chg>=0?'+':''}${d.chg.toFixed(2)} (${(d.chgP*100).toFixed(2)}%)</span>`;
+
+  const cap = d.cap >= 1e12 ? (d.cap/1e12).toFixed(2)+'T'
+            : d.cap >= 1e9  ? (d.cap/1e9).toFixed(2)+'B'
+            : d.cap >= 1e7  ? (d.cap/1e7).toFixed(2)+'Cr'
+            : d.cap.toFixed(0);
+  document.getElementById('p-cap').textContent = cap;
+
+  document.getElementById('price-result').style.display='block';
+}
+</script>
+</body>
+</html>
