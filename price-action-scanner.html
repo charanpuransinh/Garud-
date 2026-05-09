@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Price Action Scanner Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --bg2: #0b1016;
+    --card: #0e1520;
+    --card2: #111a26;
+    --border: #162030;
+    --border2: #1e2e42;
+    --gold: #d4a017;
+    --gold2: #f5c842;
+    --green: #22c55e;
+    --red: #f43f5e;
+    --blue: #38bdf8;
+    --orange: #fb923c;
+    --purple: #c084fc;
+    --text: #cbd5e1;
+    --dim: #475569;
+    --white: #f1f5f9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh; overflow-x: hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background: 
+      radial-gradient(ellipse 60% 30% at 50% 0%, rgba(212,160,23,0.06) 0%, transparent 60%),
+      radial-gradient(circle 300px at 80% 80%, rgba(56,189,248,0.03) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11,16,22,0.9);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 200;
+  }
+  .logo-group { display: flex; align-items: center; gap: 14px; }
+  .logo-icon { 
+    width: 38px; height: 38px; background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #000; flex-shrink: 0;
+  }
+  .logo-text { display: flex; flex-direction: column; }
+  .logo-main { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: var(--white); letter-spacing: 1px; }
+  .logo-sub { font-size: 10px; color: var(--gold); letter-spacing: 3px; font-weight: 600; }
+  .header-stats { display: flex; gap: 18px; }
+  .hstat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .hstat-val { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 700; color: var(--white); }
+  .hstat-label { font-size: 9px; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; }
+  .hstat-val.g { color: var(--green); }
+  .hstat-val.r { color: var(--red); }
+  .hstat-val.gold { color: var(--gold2); }
+  .live-pill { display: flex; align-items: center; gap: 6px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); padding: 5px 12px; border-radius: 20px; }
+  .live-dot2 { width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite; }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .live-text { font-size: 11px; font-weight: 700; color: var(--green); letter-spacing: 1px; }
+
+  /* Pattern Filter Tabs */
+  .pattern-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    overflow-x: auto;
+    padding: 0 24px;
+  }
+  .ptab {
+    padding: 11px 18px; font-size: 12px; font-weight: 600;
+    color: var(--dim); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .ptab:hover { color: var(--text); }
+  .ptab.active { color: var(--gold2); border-bottom-color: var(--gold2); }
+
+  /* Controls */
+  .controls2 {
+    display: flex; gap: 10px; padding: 12px 28px;
+    border-bottom: 1px solid var(--border);
+    align-items: center; flex-wrap: wrap;
+  }
+  select, .scan3-btn {
+    background: var(--card); border: 1px solid var(--border2);
+    color: var(--text); padding: 7px 13px;
+    border-radius: 6px; font-family: 'Inter'; font-size: 13px; cursor: pointer;
+  }
+  select:hover { border-color: var(--gold); }
+  .scan3-btn {
+    background: linear-gradient(135deg, #b8860b, var(--gold2));
+    border: none; color: #000; font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; letter-spacing: 1px; padding: 8px 22px;
+    border-radius: 6px; transition: all 0.3s;
+    box-shadow: 0 4px 16px rgba(212,160,23,0.25);
+  }
+  .scan3-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(212,160,23,0.45); }
+  .scan3-btn.running { opacity: 0.7; animation: shimmer 0.8s infinite alternate; }
+  @keyframes shimmer{from{box-shadow:0 4px 16px rgba(212,160,23,0.25)}to{box-shadow:0 4px 30px rgba(212,160,23,0.6)}}
+
+  .layout3 { display: grid; grid-template-columns: 1fr 300px; min-height: calc(100vh - 170px); }
+
+  .main3 { padding: 20px 28px; overflow: auto; }
+
+  /* Pattern Cards */
+  .pat-grid { display: flex; flex-direction: column; gap: 6px; }
+  
+  .pat-card {
+    border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    background: var(--card);
+    transition: all 0.25s; cursor: pointer;
+    animation: fadeUp 0.3s ease both;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .pat-card:hover { border-color: var(--border2); background: var(--card2); }
+  .pat-card.bull-pa { border-left: 3px solid var(--green); }
+  .pat-card.bear-pa { border-left: 3px solid var(--red); }
+  .pat-card.cont-pa { border-left: 3px solid var(--blue); }
+
+  .pat-main {
+    display: grid;
+    grid-template-columns: 100px 180px 1fr 140px 110px 90px 80px;
+    gap: 10px; align-items: center;
+    padding: 11px 16px;
+  }
+
+  .pa-sym { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700; color: var(--white); }
+  .pa-sym small { display: block; font-family: 'Inter'; font-size: 10px; color: var(--dim); font-weight: 400; margin-top: 1px; }
+
+  /* Pattern Name + Candle Visual */
+  .pa-pattern { display: flex; flex-direction: column; gap: 3px; }
+  .pa-pname { font-size: 13px; font-weight: 700; color: var(--white); }
+  .pa-ptype { font-size: 10px; color: var(--dim); }
+  
+  /* Candle Mini Visual */
+  .candle-vis { display: flex; align-items: flex-end; gap: 2px; height: 32px; }
+  .c-stick { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .c-wick { width: 1px; background: var(--dim); }
+  .c-body { width: 7px; border-radius: 1px; }
+  .c-bull .c-body { background: var(--green); }
+  .c-bull .c-wick { background: var(--green); }
+  .c-bear .c-body { background: var(--red); }
+  .c-bear .c-wick { background: var(--red); }
+  .c-doji .c-body { background: var(--gold); height: 2px !important; }
+  .c-doji .c-wick { background: var(--gold); }
+
+  /* Context */
+  .pa-context { display: flex; flex-direction: column; gap: 3px; }
+  .ctx-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ctx-tag {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 3px;
+  }
+  .ctx-sup { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .ctx-res { background: rgba(244,63,94,0.1); color: var(--red); border: 1px solid rgba(244,63,94,0.2); }
+  .ctx-trend { background: rgba(56,189,248,0.1); color: var(--blue); border: 1px solid rgba(56,189,248,0.2); }
+  .ctx-vol { background: rgba(251,146,60,0.1); color: var(--orange); border: 1px solid rgba(251,146,60,0.2); }
+  .ctx-tf { background: rgba(192,132,252,0.1); color: var(--purple); border: 1px solid rgba(192,132,252,0.2); }
+  .ctx-key { background: rgba(212,160,23,0.1); color: var(--gold2); border: 1px solid rgba(212,160,23,0.25); }
+
+  .pa-price { text-align: right; }
+  .pa-price-num { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700; color: var(--white); }
+  .pa-chng { font-size: 12px; font-weight: 600; }
+  .pa-chng.up { color: var(--green); }
+  .pa-chng.dn { color: var(--red); }
+
+  .pa-signal { text-align: center; }
+  .sig-name { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+  .sig-sub { font-size: 10px; color: var(--dim); margin-top: 1px; }
+  .sig-bull { color: var(--green); }
+  .sig-bear { color: var(--red); }
+  .sig-cont { color: var(--blue); }
+
+  .strength-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .strength-bar { width: 70px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .strength-fill { height: 100%; border-radius: 3px; }
+  .str-high { background: var(--green); }
+  .str-med { background: var(--gold2); }
+  .str-low { background: var(--dim); }
+  .strength-val { font-size: 11px; font-weight: 700; color: var(--text); }
+
+  .acc3 {
+    width: 60px; height: 28px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 700;
+  }
+  .acc3.high { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .acc3.med { background: rgba(245,200,66,0.15); color: var(--gold2); border: 1px solid rgba(245,200,66,0.3); }
+  .acc3.low { background: rgba(100,116,139,0.15); color: var(--dim); border: 1px solid rgba(100,116,139,0.3); }
+
+  /* Expanded detail */
+  .pat-expanded {
+    display: none; padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.25);
+  }
+  .pat-expanded.show { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .exp-box { background: var(--card); border-radius: 8px; padding: 12px; }
+  .exp-title { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--dim); margin-bottom: 8px; }
+  .exp-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px solid rgba(22,32,48,0.6); }
+  .exp-key { color: var(--dim); }
+  .exp-val { font-weight: 600; }
+  .exp-val.g { color: var(--green); }
+  .exp-val.r { color: var(--red); }
+  .exp-val.gold { color: var(--gold2); }
+  .exp-val.b { color: var(--blue); }
+
+  /* Sidebar 3 */
+  .sidebar3 { border-left: 1px solid var(--border); background: var(--bg2); padding: 20px; }
+  .s3-section { margin-bottom: 24px; }
+  .s3-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--dim); margin-bottom: 12px; text-transform: uppercase; }
+
+  /* Pattern Distribution */
+  .pat-dist { display: flex; flex-direction: column; gap: 6px; }
+  .dist-item { display: flex; align-items: center; gap: 8px; }
+  .dist-name { font-size: 11px; color: var(--text); width: 100px; flex-shrink: 0; }
+  .dist-bar-bg { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .dist-bar-fill { height: 100%; border-radius: 3px; }
+  .dist-count { font-size: 11px; font-weight: 700; color: var(--text); width: 24px; text-align: right; }
+  .d-bull-f { background: var(--green); }
+  .d-bear-f { background: var(--red); }
+  .d-cont-f { background: var(--blue); }
+
+  /* Recent History */
+  .hist-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+  .hist-sym { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--white); width: 70px; flex-shrink:0; }
+  .hist-pat { flex: 1; color: var(--dim); }
+  .hist-out { font-weight: 700; }
+  .hist-out.win { color: var(--green); }
+  .hist-out.loss { color: var(--red); }
+
+  /* Win Rate Gauge */
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .gauge { width: 100%; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+  .gauge-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--red), var(--gold2), var(--green)); }
+  .gauge-val { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 700; color: var(--gold2); }
+  .gauge-sub { font-size: 11px; color: var(--dim); }
+
+  .no-results3 { text-align: center; padding: 50px; color: var(--dim); }
+
+  .col-hd {
+    display: grid;
+    grid-template-columns: 100px 180px 1fr 140px 110px 90px 80px;
+    gap: 10px;
+    padding: 6px 16px 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    color: var(--dim); text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-group">
+    <div class="logo-icon">PA</div>
+    <div class="logo-text">
+      <div class="logo-main">PRICE ACTION SCANNER</div>
+      <div class="logo-sub">CANDLESTICK · PATTERNS · STRUCTURE</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-val gold" id="h-total">0</div><div class="hstat-label">Signals</div></div>
+    <div class="hstat"><div class="hstat-val g" id="h-bull">0</div><div class="hstat-label">Bullish</div></div>
+    <div class="hstat"><div class="hstat-val r" id="h-bear">0</div><div class="hstat-label">Bearish</div></div>
+    <div class="hstat"><div class="hstat-val gold" id="h-wr">--</div><div class="hstat-label">Win Rate</div></div>
+  </div>
+  <div class="live-pill"><div class="live-dot2"></div><div class="live-text">SCANNING</div></div>
+</div>
+
+<div class="pattern-tabs">
+  <div class="ptab active" onclick="filterPat('all',this)">All Patterns</div>
+  <div class="ptab" onclick="filterPat('reversal',this)">Reversal</div>
+  <div class="ptab" onclick="filterPat('continuation',this)">Continuation</div>
+  <div class="ptab" onclick="filterPat('single',this)">Single Candle</div>
+  <div class="ptab" onclick="filterPat('double',this)">Double Candle</div>
+  <div class="ptab" onclick="filterPat('triple',this)">Triple Candle</div>
+  <div class="ptab" onclick="filterPat('structure',this)">Structure</div>
+  <div class="ptab" onclick="filterPat('volume',this)">Volume Confirm</div>
+</div>
+
+<div class="controls2">
+  <select id="mkt3">
+    <option value="all">All Markets</option>
+    <option value="nse">NSE Equity</option>
+    <option value="fo">F&O</option>
+    <option value="idx">Indices</option>
+    <option value="crypto">Crypto</option>
+  </select>
+  <select id="tf3">
+    <option value="5m">5 Min</option>
+    <option value="15m">15 Min</option>
+    <option value="1h" selected>1 Hour</option>
+    <option value="4h">4 Hour</option>
+    <option value="1d">Daily</option>
+    <option value="1w">Weekly</option>
+  </select>
+  <select id="minAcc3">
+    <option value="0">Any Accuracy</option>
+    <option value="70">≥ 70%</option>
+    <option value="75" selected>≥ 75%</option>
+    <option value="80">≥ 80%</option>
+    <option value="85">≥ 85%</option>
+    <option value="90">≥ 90%</option>
+  </select>
+  <select id="volConf">
+    <option value="any">Vol: Any</option>
+    <option value="high">Vol: High Only</option>
+    <option value="above">Vol: Above Avg</option>
+  </select>
+  <select id="signalType">
+    <option value="all">All Signals</option>
+    <option value="bull">Bullish Only</option>
+    <option value="bear">Bearish Only</option>
+  </select>
+  <button class="scan3-btn" id="scanBtn3" onclick="runScan3()">◈ SCAN PATTERNS</button>
+  <div style="margin-left:auto;font-size:11px;color:var(--dim)">Updated: <span id="last3">--</span></div>
+</div>
+
+<div class="layout3">
+  <div class="main3">
+    <div class="col-hd">
+      <div>SYMBOL</div>
+      <div>PATTERN</div>
+      <div>CANDLE + CONTEXT</div>
+      <div>PRICE / CHANGE</div>
+      <div>SIGNAL</div>
+      <div>STRENGTH</div>
+      <div>ACCURACY</div>
+    </div>
+    <div class="pat-grid" id="patGrid">
+      <div class="no-results3">Click SCAN PATTERNS to begin...</div>
+    </div>
+  </div>
+
+  <div class="sidebar3">
+    <div class="s3-section">
+      <div class="s3-title">Win Rate</div>
+      <div class="gauge-wrap">
+        <div class="gauge-val" id="winRateGauge">--</div>
+        <div class="gauge"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
+        <div class="gauge-sub">Historical pattern accuracy</div>
+      </div>
+    </div>
+
+    <div class="s3-section">
+      <div class="s3-title">Pattern Distribution</div>
+      <div class="pat-dist" id="patDist"></div>
+    </div>
+
+    <div class="s3-section">
+      <div class="s3-title">Recent Outcomes</div>
+      <div id="histList"></div>
+    </div>
+
+    <div class="s3-section">
+      <div class="s3-title">Pattern Reliability</div>
+      <div style="font-size:11px;color:var(--dim);line-height:2;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--green)">Three White Soldiers</span><span style="color:var(--text)">89%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--green)">Morning Star</span><span style="color:var(--text)">84%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--red)">Three Black Crows</span><span style="color:var(--text)">87%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--red)">Evening Star</span><span style="color:var(--text)">82%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--blue)">Inside Bar</span><span style="color:var(--text)">78%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--blue)">Pin Bar</span><span style="color:var(--text)">80%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--gold2)">Engulfing</span><span style="color:var(--text)">76%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--gold2)">Doji</span><span style="color:var(--text)">65%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYMS3 = [
+  {sym:'RELIANCE',name:'NSE',base:2890},{sym:'TCS',name:'NSE',base:3720},
+  {sym:'HDFC',name:'NSE',base:1640},{sym:'INFY',name:'NSE',base:1480},
+  {sym:'ICICIBANK',name:'NSE',base:1120},{sym:'SBIN',name:'NSE',base:785},
+  {sym:'WIPRO',name:'NSE',base:462},{sym:'LT',name:'NSE',base:3450},
+  {sym:'AXISBANK',name:'NSE',base:1090},{sym:'MARUTI',name:'NSE',base:12800},
+  {sym:'BAJFINANCE',name:'NSE',base:7200},{sym:'HCLTECH',name:'NSE',base:1580},
+  {sym:'TATAMOTORS',name:'NSE',base:920},{sym:'ADANIENT',name:'NSE',base:2450},
+  {sym:'NIFTY',name:'Index',base:22450},{sym:'BANKNIFTY',name:'Index',base:48200},
+  {sym:'SUNPHARMA',name:'NSE',base:1680},{sym:'TATASTEEL',name:'NSE',base:165},
+  {sym:'POWERGRID',name:'NSE',base:310},{sym:'HINDUNILVR',name:'NSE',base:2560},
+];
+
+const PATTERNS = {
+  bull: [
+    {name:'Bullish Engulfing',type:'reversal',cat:'double',acc:82,str:85},
+    {name:'Morning Star',type:'reversal',cat:'triple',acc:84,str:88},
+    {name:'Hammer',type:'reversal',cat:'single',acc:75,str:72},
+    {name:'Inverted Hammer',type:'reversal',cat:'single',acc:70,str:68},
+    {name:'Three White Soldiers',type:'continuation',cat:'triple',acc:89,str:92},
+    {name:'Bullish Harami',type:'reversal',cat:'double',acc:72,str:70},
+    {name:'Piercing Line',type:'reversal',cat:'double',acc:76,str:78},
+    {name:'Dragonfly Doji',type:'reversal',cat:'single',acc:71,str:73},
+    {name:'Pin Bar (Bullish)',type:'reversal',cat:'single',acc:80,str:82},
+    {name:'Inside Bar Break',type:'continuation',cat:'structure',acc:78,str:80},
+    {name:'Bull Flag',type:'continuation',cat:'structure',acc:81,str:84},
+    {name:'Double Bottom',type:'reversal',cat:'structure',acc:83,str:86},
+  ],
+  bear: [
+    {name:'Bearish Engulfing',type:'reversal',cat:'double',acc:83,str:86},
+    {name:'Evening Star',type:'reversal',cat:'triple',acc:82,str:85},
+    {name:'Shooting Star',type:'reversal',cat:'single',acc:76,str:74},
+    {name:'Hanging Man',type:'reversal',cat:'single',acc:71,str:69},
+    {name:'Three Black Crows',type:'continuation',cat:'triple',acc:87,str:90},
+    {name:'Bearish Harami',type:'reversal',cat:'double',acc:71,str:68},
+    {name:'Dark Cloud Cover',type:'reversal',cat:'double',acc:77,str:79},
+    {name:'Gravestone Doji',type:'reversal',cat:'single',acc:72,str:74},
+    {name:'Pin Bar (Bearish)',type:'reversal',cat:'single',acc:80,str:81},
+    {name:'Bear Flag',type:'continuation',cat:'structure',acc:80,str:83},
+    {name:'Double Top',type:'reversal',cat:'structure',acc:82,str:85},
+  ]
+};
+
+const CONTEXTS = {
+  bull: [
+    ['Support Level','Uptrend','High Vol'],
+    ['Key Support','Oversold Zone','Vol Spike'],
+    ['Demand Zone','Above VWAP','High Vol'],
+    ['Strong Support','Bull Trend','Above EMA'],
+    ['Reversal Zone','Above 200MA','Vol Confirm'],
+  ],
+  bear: [
+    ['Resistance Level','Downtrend','High Vol'],
+    ['Key Resistance','Overbought Zone','Vol Spike'],
+    ['Supply Zone','Below VWAP','High Vol'],
+    ['Strong Resistance','Bear Trend','Below EMA'],
+    ['Reversal Zone','Below 200MA','Vol Confirm'],
+  ]
+};
+
+const CTX_CLASSES = {
+  'Support Level':'ctx-sup','Key Support':'ctx-sup','Demand Zone':'ctx-sup',
+  'Strong Support':'ctx-sup','Reversal Zone':'ctx-key','Uptrend':'ctx-trend',
+  'Downtrend':'ctx-trend','Bull Trend':'ctx-trend','Bear Trend':'ctx-trend',
+  'Above VWAP':'ctx-trend','Below VWAP':'ctx-trend','High Vol':'ctx-vol',
+  'Vol Spike':'ctx-vol','Vol Confirm':'ctx-vol','Above EMA':'ctx-trend',
+  'Below EMA':'ctx-trend','Oversold Zone':'ctx-key','Overbought Zone':'ctx-key',
+  'Above 200MA':'ctx-trend','Below 200MA':'ctx-trend','Key Resistance':'ctx-res',
+  'Resistance Level':'ctx-res','Supply Zone':'ctx-res','Strong Resistance':'ctx-res',
+};
+
+function rnd3(min,max){return Math.random()*(max-min)+min;}
+function pick3(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function accCls3(a){return a>=82?'high':a>=72?'med':'low';}
+function strCls(s){return s>=80?'str-high':s>=65?'str-med':'str-low';}
+
+function genCandleVis(sig){
+  const candles = [];
+  if(sig==='bull'){
+    candles.push({type:'bear',wt:8,bh:14,wb:10});
+    candles.push({type:'bear',wt:6,bh:12,wb:8});
+    candles.push({type:'bull',wt:12,bh:20,wb:6});
+  } else {
+    candles.push({type:'bull',wt:8,bh:14,wb:10});
+    candles.push({type:'bull',wt:6,bh:12,wb:8});
+    candles.push({type:'bear',wt:12,bh:20,wb:6});
+  }
+  return candles.map(c=>`
+    <div class="c-stick c-${c.type}" style="height:${c.wt+c.bh+c.wb}px;justify-content:space-between;display:flex;flex-direction:column;align-items:center;">
+      <div class="c-wick" style="height:${c.wt}px"></div>
+      <div class="c-body" style="height:${c.bh}px"></div>
+      <div class="c-wick" style="height:${c.wb}px"></div>
+    </div>
+  `).join('');
+}
+
+function generatePASignal(symObj){
+  const isBull = Math.random()>0.45;
+  const sig = isBull?'bull':'bear';
+  const pats = PATTERNS[sig];
+  const pat = pick3(pats);
+  const ctx = pick3(CONTEXTS[sig]);
+  const price = symObj.base*(1+rnd3(-0.05,0.05));
+  const chng = rnd3(-3.5,3.5);
+  const acc = pat.acc + Math.floor(rnd3(-5,5));
+  const str = pat.str + Math.floor(rnd3(-5,5));
+  const volConf = Math.random()>0.35;
+  const entryPrice = price;
+  const sl = (price*(1-(isBull?1:-1)*rnd3(0.015,0.03))).toFixed(2);
+  const t1 = (price*(1+(isBull?1:-1)*rnd3(0.02,0.04))).toFixed(2);
+  const t2 = (price*(1+(isBull?1:-1)*rnd3(0.04,0.08))).toFixed(2);
+  const rr = (Math.abs((t1-price)/(sl-price))).toFixed(1);
+  return {symObj, sig, pat, ctx, price, chng, acc:Math.max(60,Math.min(96,acc)), str:Math.max(50,Math.min(98,str)), volConf, entryPrice, sl, t1, t2, rr};
+}
+
+function renderPACard(d, i){
+  const isBull = d.sig==='bull';
+  const cardCls = isBull?'bull-pa':d.pat.type==='continuation'?'cont-pa':'bear-pa';
+  const sigCls = isBull?'sig-bull':d.pat.type==='continuation'?'sig-cont':'sig-bear';
+  const sigTxt = isBull?'BULLISH':d.pat.type==='continuation'?'CONTINUE':'BEARISH';
+  const chngCls = d.chng>=0?'up':'dn';
+  const ctxTags = d.ctx.map(c=>`<span class="ctx-tag ${CTX_CLASSES[c]||'ctx-trend'}">${c}</span>`).join('');
+  const volTag = d.volConf?'<span class="ctx-tag ctx-vol">✓ Vol</span>':'';
+  const priceFmt = d.price>=1000?d.price.toFixed(1):d.price.toFixed(2);
+  const strCl = strCls(d.str);
+  const strLabel = d.str>=82?'Strong':d.str>=65?'Moderate':'Weak';
+  return `
+    <div class="pat-card ${cardCls}" style="animation-delay:${i*0.04}s" onclick="togglePA(this)">
+      <div class="pat-main">
+        <div class="pa-sym">${d.symObj.sym}<small>${d.symObj.name}</small></div>
+        <div class="pa-pattern">
+          <div class="pa-pname">${d.pat.name}</div>
+          <div class="pa-ptype">${d.pat.type} · ${d.pat.cat}</div>
+        </div>
+        <div>
+          <div class="candle-vis">${genCandleVis(d.sig)}</div>
+          <div class="ctx-row" style="margin-top:4px;">${ctxTags}${volTag}</div>
+        </div>
+        <div class="pa-price">
+          <div class="pa-price-num">₹${priceFmt}</div>
+          <div class="pa-chng ${chngCls}">${d.chng>=0?'+':''}${d.chng.toFixed(2)}%</div>
+        </div>
+        <div class="pa-signal">
+          <div class="sig-name ${sigCls}">${sigTxt}</div>
+          <div class="sig-sub">${d.pat.type}</div>
+        </div>
+        <div class="strength-col">
+          <div class="strength-bar"><div class="strength-fill ${strCl}" style="width:${d.str}%"></div></div>
+          <div class="strength-val">${strLabel}</div>
+        </div>
+        <div class="acc3 ${accCls3(d.acc)}">${d.acc}%</div>
+      </div>
+      <div class="pat-expanded">
+        <div class="exp-box">
+          <div class="exp-title">TRADE SETUP</div>
+          <div class="exp-row"><span class="exp-key">Entry</span><span class="exp-val">₹${d.entryPrice.toFixed(2)}</span></div>
+          <div class="exp-row"><span class="exp-key">Stop Loss</span><span class="exp-val r">₹${d.sl}</span></div>
+          <div class="exp-row"><span class="exp-key">Target 1</span><span class="exp-val g">₹${d.t1}</span></div>
+          <div class="exp-row"><span class="exp-key">Target 2</span><span class="exp-val g">₹${d.t2}</span></div>
+          <div class="exp-row"><span class="exp-key">Risk:Reward</span><span class="exp-val gold">1:${d.rr}</span></div>
+        </div>
+        <div class="exp-box">
+          <div class="exp-title">PATTERN INFO</div>
+          <div class="exp-row"><span class="exp-key">Pattern</span><span class="exp-val">${d.pat.name}</span></div>
+          <div class="exp-row"><span class="exp-key">Type</span><span class="exp-val b">${d.pat.type}</span></div>
+          <div class="exp-row"><span class="exp-key">Category</span><span class="exp-val">${d.pat.cat}</span></div>
+          <div class="exp-row"><span class="exp-key">Strength</span><span class="exp-val">${d.str}%</span></div>
+          <div class="exp-row"><span class="exp-key">Vol Confirm</span><span class="exp-val ${d.volConf?'g':'r'}">${d.volConf?'Yes':'No'}</span></div>
+        </div>
+        <div class="exp-box">
+          <div class="exp-title">CONTEXT</div>
+          ${d.ctx.map(c=>`<div class="exp-row"><span class="exp-key">✓</span><span class="exp-val b">${c}</span></div>`).join('')}
+          <div class="exp-row"><span class="exp-key">Accuracy</span><span class="exp-val gold">${d.acc}%</span></div>
+          <div class="exp-row"><span class="exp-key">Signal</span><span class="exp-val ${d.sig==='bull'?'g':'r'}">${d.sig==='bull'?'BULLISH':'BEARISH'}</span></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function togglePA(el){ el.querySelector('.pat-expanded').classList.toggle('show'); }
+
+let currentPat = 'all';
+let allSignals3 = [];
+
+function filterPat(cat, el){
+  currentPat = cat;
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(allSignals3.length) renderFiltered();
+}
+
+function renderFiltered(){
+  let sigs = allSignals3;
+  if(currentPat!=='all'){
+    if(currentPat==='reversal') sigs=sigs.filter(s=>s.pat.type==='reversal');
+    else if(currentPat==='continuation') sigs=sigs.filter(s=>s.pat.type==='continuation');
+    else if(currentPat==='single') sigs=sigs.filter(s=>s.pat.cat==='single');
+    else if(currentPat==='double') sigs=sigs.filter(s=>s.pat.cat==='double');
+    else if(currentPat==='triple') sigs=sigs.filter(s=>s.pat.cat==='triple');
+    else if(currentPat==='structure') sigs=sigs.filter(s=>s.pat.cat==='structure');
+    else if(currentPat==='volume') sigs=sigs.filter(s=>s.volConf);
+  }
+  const sigType = document.getElementById('signalType').value;
+  if(sigType!=='all') sigs=sigs.filter(s=>s.sig===sigType);
+  const grid = document.getElementById('patGrid');
+  if(sigs.length===0){
+    grid.innerHTML='<div class="no-results3">No patterns found for this filter.</div>';
+  } else {
+    grid.innerHTML = sigs.map((s,i)=>renderPACard(s,i)).join('');
+  }
+}
+
+function runScan3(){
+  const btn = document.getElementById('scanBtn3');
+  btn.textContent = '⟳ SCANNING...';
+  btn.classList.add('running');
+
+  setTimeout(()=>{
+    const minAccVal = parseInt(document.getElementById('minAcc3').value)||0;
+    let raw = SYMS3.map(generatePASignal);
+    raw = raw.filter(s=>s.acc>=minAccVal);
+    raw.sort((a,b)=>b.acc-a.acc);
+    allSignals3 = raw;
+
+    renderFiltered();
+    updateSidebar3(raw);
+    updateHeader3(raw);
+
+    document.getElementById('last3').textContent = new Date().toLocaleTimeString('en-IN');
+    btn.textContent = '◈ SCAN PATTERNS';
+    btn.classList.remove('running');
+  },1000);
+}
+
+function updateHeader3(sigs){
+  const bull = sigs.filter(s=>s.sig==='bull').length;
+  const bear = sigs.filter(s=>s.sig==='bear').length;
+  const avg = sigs.length?(sigs.reduce((a,s)=>a+s.acc,0)/sigs.length).toFixed(0)+'%':'--';
+  document.getElementById('h-total').textContent = sigs.length;
+  document.getElementById('h-bull').textContent = bull;
+  document.getElementById('h-bear').textContent = bear;
+  document.getElementById('h-wr').textContent = avg;
+}
+
+function updateSidebar3(sigs){
+  const wr = sigs.length?(sigs.reduce((a,s)=>a+s.acc,0)/sigs.length).toFixed(1)+'%':'--';
+  document.getElementById('winRateGauge').textContent = wr;
+  const pct = sigs.length?sigs.reduce((a,s)=>a+s.acc,0)/sigs.length:0;
+  document.getElementById('gaugeFill').style.width = pct+'%';
+
+  // Pattern Distribution
+  const patCounts = {};
+  sigs.forEach(s=>{
+    const k = s.sig==='bull'?'Bullish':'Bearish';
+    const t = s.pat.type==='continuation'?'Continuation':s.pat.type==='reversal'?'Reversal':'Other';
+    const key = k+' '+t;
+    patCounts[key]=(patCounts[key]||0)+1;
+  });
+  const maxCount = Math.max(...Object.values(patCounts),1);
+  document.getElementById('patDist').innerHTML = Object.entries(patCounts).map(([k,v])=>{
+    const isBull = k.includes('Bull');
+    const isCont = k.includes('Cont');
+    const fillCls = isBull?'d-bull-f':isCont?'d-cont-f':'d-bear-f';
+    return `<div class="dist-item">
+      <div class="dist-name">${k}</div>
+      <div class="dist-bar-bg"><div class="dist-bar-fill ${fillCls}" style="width:${v/maxCount*100}%"></div></div>
+      <div class="dist-count">${v}</div>
+    </div>`;
+  }).join('');
+
+  // History
+  const OUTCOMES = [
+    {sym:'RELIANCE',pat:'Bullish Engulfing',out:'win',pct:'+2.3%'},
+    {sym:'TCS',pat:'Evening Star',out:'win',pct:'-1.8%'},
+    {sym:'INFY',pat:'Hammer',out:'loss',pct:'-0.5%'},
+    {sym:'HDFC',pat:'Three White Soldiers',out:'win',pct:'+3.1%'},
+    {sym:'SBIN',pat:'Shooting Star',out:'win',pct:'-2.0%'},
+    {sym:'ICICI',pat:'Morning Star',out:'win',pct:'+1.9%'},
+  ];
+  document.getElementById('histList').innerHTML = OUTCOMES.map(o=>`
+    <div class="hist-item">
+      <div class="hist-sym">${o.sym}</div>
+      <div class="hist-pat">${o.pat}</div>
+      <div class="hist-out ${o.out}">${o.out==='win'?'✓':'✗'} ${o.pct}</div>
+    </div>
+  `).join('');
+}
+
+setTimeout(runScan3, 500);
+</script>
+</body>
+</html>

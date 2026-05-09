@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indicator Confluence Scanner Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a12;
+    --bg2: #0d0d18;
+    --card: #111122;
+    --card2: #141428;
+    --border: #1e1e3c;
+    --border2: #252545;
+    --accent: #7c3aed;
+    --accent2: #f59e0b;
+    --green: #10b981;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --text: #e2e8f0;
+    --dim: #64748b;
+    --glow: rgba(124,58,237,0.15);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: 
+      radial-gradient(circle 600px at 10% 20%, rgba(124,58,237,0.06) 0%, transparent 70%),
+      radial-gradient(circle 400px at 90% 80%, rgba(245,158,11,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,13,24,0.8);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .brand-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px; font-weight: 700;
+    color: #fff; letter-spacing: 1px;
+  }
+  .brand-title span { color: var(--accent); }
+  .brand-sub { font-size: 11px; color: var(--dim); letter-spacing: 2px; }
+  
+  .header-right { display: flex; gap: 12px; align-items: center; }
+  .badge {
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  }
+  .badge-live { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); display:flex;align-items:center;gap:6px; }
+  .pulse { width:6px;height:6px;border-radius:50%;background:var(--green);animation:p 1.3s infinite; }
+  @keyframes p{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:0.6}}
+  .badge-cnt { background: rgba(124,58,237,0.15); color: var(--accent); border: 1px solid rgba(124,58,237,0.3); }
+
+  /* Indicator Filters */
+  .filter-bar {
+    display: flex; gap: 0; padding: 12px 28px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; align-items: center;
+    background: var(--bg2);
+  }
+  .filter-section { display: flex; flex-direction: column; gap: 4px; margin-right: 20px; padding-right: 20px; border-right: 1px solid var(--border); }
+  .filter-section:last-child { border-right: none; }
+  .filter-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+  .filter-toggles { display: flex; gap: 5px; flex-wrap: wrap; }
+  .toggle-btn {
+    padding: 4px 10px; border-radius: 4px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+    background: var(--card); color: var(--dim);
+  }
+  .toggle-btn.active { color: #fff; }
+  .toggle-btn.t-rsi.active { background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.5); color: var(--blue); }
+  .toggle-btn.t-macd.active { background: rgba(124,58,237,0.2); border-color: rgba(124,58,237,0.5); color: var(--accent); }
+  .toggle-btn.t-ema.active { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: var(--green); }
+  .toggle-btn.t-bb.active { background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: var(--accent2); }
+  .toggle-btn.t-stoch.active { background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5); color: var(--pink); }
+  .toggle-btn.t-vwap.active { background: rgba(6,182,212,0.2); border-color: rgba(6,182,212,0.5); color: var(--cyan); }
+  .toggle-btn.t-adx.active { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5); color: var(--red); }
+  .toggle-btn.t-ichi.active { background: rgba(180,120,255,0.2); border-color: rgba(180,120,255,0.5); color: #b478ff; }
+  
+  .scan-row { display: flex; gap: 10px; align-items: center; padding: 10px 28px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  select {
+    background: var(--card); border: 1px solid var(--border2);
+    color: var(--text); padding: 7px 12px; border-radius: 6px;
+    font-family: 'DM Sans'; font-size: 13px; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  select:hover { border-color: var(--accent); }
+  .scan-button {
+    background: linear-gradient(135deg, var(--accent), #9333ea);
+    border: none; color: #fff; padding: 8px 22px;
+    border-radius: 6px; font-family: 'Space Mono', monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+  }
+  .scan-button:hover { transform: translateY(-1px); box-shadow: 0 6px 30px rgba(124,58,237,0.5); }
+  .scan-button.running { animation: glow 0.8s infinite alternate; }
+  @keyframes glow{from{box-shadow:0 4px 20px rgba(124,58,237,0.3)}to{box-shadow:0 4px 35px rgba(124,58,237,0.7)}}
+
+  .layout { display: grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 180px); }
+
+  /* Main Scanner */
+  .scanner-main { padding: 20px 28px; overflow: auto; }
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: 'Space Mono', monospace; font-size: 12px;
+    color: var(--accent); letter-spacing: 2px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::before { content: '▣'; font-size: 10px; }
+  .sort-btns { display: flex; gap: 6px; }
+  .sort-btn { padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; background: var(--card); border: 1px solid var(--border); color: var(--dim); transition: all 0.2s; }
+  .sort-btn.active { background: rgba(124,58,237,0.2); border-color: var(--accent); color: var(--accent); }
+
+  /* Signal Card */
+  .signal-cards { display: flex; flex-direction: column; gap: 8px; }
+  .scard {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0;
+    overflow: hidden;
+    transition: all 0.25s;
+    cursor: pointer;
+    animation: slideIn 0.35s ease both;
+  }
+  @keyframes slideIn{from{opacity:0;transform:translateX(-15px)}to{opacity:1;transform:translateX(0)}}
+  .scard:hover { border-color: var(--border2); background: var(--card2); transform: translateX(4px); }
+  .scard.bull-card { border-left: 3px solid var(--green); }
+  .scard.bear-card { border-left: 3px solid var(--red); }
+  .scard.neutral-card { border-left: 3px solid var(--dim); }
+
+  .scard-top {
+    display: grid;
+    grid-template-columns: 110px 1fr 1fr 130px 100px 80px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  .scard-sym { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: #fff; }
+  .scard-sym small { display: block; font-family: 'DM Sans'; font-size: 10px; color: var(--dim); margin-top: 1px; font-weight: 400; }
+
+  /* Indicator Pills */
+  .ind-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ind-pill {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700;
+  }
+  .ind-pill .dot { width:5px; height:5px; border-radius:50%; }
+  .ip-rsi { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+  .ip-macd { background: rgba(124,58,237,0.12); color: var(--accent); border: 1px solid rgba(124,58,237,0.25); }
+  .ip-ema { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.25); }
+  .ip-bb { background: rgba(245,158,11,0.12); color: var(--accent2); border: 1px solid rgba(245,158,11,0.25); }
+  .ip-stoch { background: rgba(236,72,153,0.12); color: var(--pink); border: 1px solid rgba(236,72,153,0.25); }
+  .ip-vwap { background: rgba(6,182,212,0.12); color: var(--cyan); border: 1px solid rgba(6,182,212,0.25); }
+  .ip-adx { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+  .ip-ichi { background: rgba(180,120,255,0.12); color: #b478ff; border: 1px solid rgba(180,120,255,0.25); }
+
+  /* Confluence Bar */
+  .confluence-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .conf-label { font-size: 10px; color: var(--dim); }
+  .conf-bar { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .conf-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .conf-val { font-size: 11px; font-weight: 700; }
+
+  .price-block { text-align: right; }
+  .price-big { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: #fff; }
+  .price-chng { font-size: 12px; font-weight: 700; }
+  .chg-up { color: var(--green); }
+  .chg-dn { color: var(--red); }
+
+  .signal-tag {
+    padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; text-align: center;
+  }
+  .st-buy { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .st-sell { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .st-hold { background: rgba(100,116,139,0.15); color: var(--dim); border: 1px solid rgba(100,116,139,0.3); }
+
+  .acc-ring {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; position: relative;
+    border: 2px solid transparent;
+    background: var(--bg);
+  }
+  .acc-ring.high { border-color: var(--green); box-shadow: 0 0 12px rgba(16,185,129,0.3); }
+  .acc-ring.med { border-color: var(--accent2); box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+  .acc-ring.low { border-color: var(--red); box-shadow: 0 0 12px rgba(239,68,68,0.3); }
+  .acc-num { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; }
+  .acc-ring.high .acc-num { color: var(--green); }
+  .acc-ring.med .acc-num { color: var(--accent2); }
+  .acc-ring.low .acc-num { color: var(--red); }
+  .acc-pct { font-size: 9px; color: var(--dim); }
+
+  /* Expandable details */
+  .scard-detail {
+    display: none;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+  .scard-detail.open { display: block; }
+  .detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+  .d-cell { background: var(--card); border-radius: 6px; padding: 10px; }
+  .d-ind { font-size: 10px; color: var(--dim); font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  .d-val { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: #fff; }
+  .d-sig { font-size: 10px; margin-top: 2px; }
+  .d-sig.bull { color: var(--green); }
+  .d-sig.bear { color: var(--red); }
+  .d-sig.neutral { color: var(--dim); }
+
+  .tgt-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .tgt-item { display: flex; flex-direction: column; gap: 2px; background: var(--card); padding: 8px 12px; border-radius: 6px; }
+  .tgt-key { font-size: 10px; color: var(--dim); }
+  .tgt-val { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; }
+  .tgt-sl { color: var(--red); }
+  .tgt-t1 { color: var(--green); }
+  .tgt-t2 { color: #00ff88; }
+  .tgt-rr { color: var(--accent2); }
+
+  /* Sidebar */
+  .sidebar { border-left: 1px solid var(--border); background: var(--bg2); padding: 20px; }
+  .sb-section { margin-bottom: 22px; }
+  .sb-title { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--dim); margin-bottom: 12px; }
+
+  /* Indicator Summary Rings */
+  .ind-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ind-sum-item {
+    background: var(--card); border-radius: 8px; padding: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ind-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ind-icon.rsi { background: rgba(59,130,246,0.2); color: var(--blue); }
+  .ind-icon.macd { background: rgba(124,58,237,0.2); color: var(--accent); }
+  .ind-icon.ema { background: rgba(16,185,129,0.2); color: var(--green); }
+  .ind-icon.bb { background: rgba(245,158,11,0.2); color: var(--accent2); }
+  .ind-icon.stoch { background: rgba(236,72,153,0.2); color: var(--pink); }
+  .ind-icon.vwap { background: rgba(6,182,212,0.2); color: var(--cyan); }
+  .ind-icon.adx { background: rgba(239,68,68,0.2); color: var(--red); }
+  .ind-icon.ichi { background: rgba(180,120,255,0.2); color: #b478ff; }
+  .ind-info { flex: 1; }
+  .ind-name { font-size: 11px; font-weight: 700; color: var(--text); }
+  .ind-sval { font-size: 10px; color: var(--dim); }
+  .ind-signal-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-bull { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot-bear { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .dot-neut { background: var(--dim); }
+
+  /* Overall verdict */
+  .verdict-box {
+    background: var(--card); border-radius: 10px; padding: 16px;
+    text-align: center; border: 1px solid var(--border);
+  }
+  .verdict-title { font-size: 11px; color: var(--dim); margin-bottom: 8px; letter-spacing: 1px; }
+  .verdict-val { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .verdict-val.buy { color: var(--green); }
+  .verdict-val.sell { color: var(--red); }
+  .verdict-val.neutral { color: var(--dim); }
+  .verdict-sub { font-size: 11px; color: var(--dim); }
+
+  /* Top performers */
+  .top-item { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .top-rank { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--dim); width: 20px; }
+  .top-sym { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: #fff; flex: 1; }
+  .top-acc { font-size: 12px; font-weight: 700; color: var(--green); }
+  .top-conf { font-size: 10px; color: var(--dim); }
+
+  .no-sig { text-align: center; padding: 50px 20px; color: var(--dim); }
+  .no-sig div { font-size: 32px; margin-bottom: 10px; }
+
+  .col-labels {
+    display: grid;
+    grid-template-columns: 110px 1fr 1fr 130px 100px 80px;
+    gap: 12px;
+    padding: 6px 16px 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    color: var(--dim); text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="brand-title">INDICATOR <span>CONFLUENCE</span> SCANNER</div>
+    <div class="brand-sub">HIGH ACCURACY · MULTI-INDICATOR · REAL-TIME</div>
+  </div>
+  <div class="header-right">
+    <div class="badge badge-live"><div class="pulse"></div>LIVE</div>
+    <div class="badge badge-cnt" id="sigCount">0 Signals</div>
+    <div style="font-size:12px;color:var(--dim);font-family:'Space Mono';" id="clock2"></div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-section">
+    <div class="filter-label">Active Indicators</div>
+    <div class="filter-toggles">
+      <div class="toggle-btn t-rsi active" data-ind="rsi" onclick="toggleInd(this)">RSI</div>
+      <div class="toggle-btn t-macd active" data-ind="macd" onclick="toggleInd(this)">MACD</div>
+      <div class="toggle-btn t-ema active" data-ind="ema" onclick="toggleInd(this)">EMA Cross</div>
+      <div class="toggle-btn t-bb active" data-ind="bb" onclick="toggleInd(this)">Bollinger</div>
+      <div class="toggle-btn t-stoch active" data-ind="stoch" onclick="toggleInd(this)">Stochastic</div>
+      <div class="toggle-btn t-vwap active" data-ind="vwap" onclick="toggleInd(this)">VWAP</div>
+      <div class="toggle-btn t-adx active" data-ind="adx" onclick="toggleInd(this)">ADX</div>
+      <div class="toggle-btn t-ichi active" data-ind="ichi" onclick="toggleInd(this)">Ichimoku</div>
+    </div>
+  </div>
+  <div class="filter-section">
+    <div class="filter-label">Min Confluence</div>
+    <div class="filter-toggles">
+      <div class="toggle-btn active" id="conf3" onclick="setMinConf(3,this)">3+</div>
+      <div class="toggle-btn" id="conf4" onclick="setMinConf(4,this)">4+</div>
+      <div class="toggle-btn" id="conf5" onclick="setMinConf(5,this)">5+</div>
+      <div class="toggle-btn" id="conf6" onclick="setMinConf(6,this)">6+</div>
+    </div>
+  </div>
+</div>
+
+<div class="scan-row">
+  <select id="mktSel2">
+    <option value="nse">NSE Equity</option>
+    <option value="fo">F&O Stocks</option>
+    <option value="idx">Indices</option>
+    <option value="crypto">Crypto</option>
+  </select>
+  <select id="tfSel2">
+    <option value="5m">5 Min</option>
+    <option value="15m">15 Min</option>
+    <option value="1h" selected>1 Hour</option>
+    <option value="4h">4 Hour</option>
+    <option value="1d">Daily</option>
+  </select>
+  <select id="signalFilter">
+    <option value="all">All Signals</option>
+    <option value="BUY">Buy Only</option>
+    <option value="SELL">Sell Only</option>
+  </select>
+  <select id="minAcc2">
+    <option value="0">Any Accuracy</option>
+    <option value="75">≥ 75%</option>
+    <option value="80" selected>≥ 80%</option>
+    <option value="85">≥ 85%</option>
+    <option value="90">≥ 90%</option>
+  </select>
+  <button class="scan-button" id="scanBtn2" onclick="runScan2()">▶ RUN SCAN</button>
+  <div style="margin-left:auto;font-size:11px;color:var(--dim);">Last: <span id="lastScan">--</span></div>
+</div>
+
+<div class="layout">
+  <div class="scanner-main">
+    <div class="section-head">
+      <div class="section-title">CONFLUENCE SIGNALS</div>
+      <div class="sort-btns">
+        <div class="sort-btn active" onclick="sortBy('acc')">Accuracy</div>
+        <div class="sort-btn" onclick="sortBy('conf')">Confluence</div>
+        <div class="sort-btn" onclick="sortBy('price')">Price</div>
+      </div>
+    </div>
+    <div class="col-labels">
+      <div>SYMBOL</div>
+      <div>ACTIVE INDICATORS</div>
+      <div>CONFLUENCE SCORE</div>
+      <div>PRICE / CHANGE</div>
+      <div>SIGNAL</div>
+      <div>ACCURACY</div>
+    </div>
+    <div class="signal-cards" id="signalCards">
+      <div class="no-sig"><div>📊</div>Run the scanner to find high-confluence signals</div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">INDICATOR STATUS</div>
+      <div class="ind-summary" id="indSummary"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">MARKET VERDICT</div>
+      <div class="verdict-box" id="verdictBox">
+        <div class="verdict-title">OVERALL BIAS</div>
+        <div class="verdict-val neutral" id="verdictVal">--</div>
+        <div class="verdict-sub" id="verdictSub">Run scan to update</div>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">TOP PERFORMERS</div>
+      <div id="topList"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">INDICATOR GUIDE</div>
+      <div style="font-size:11px;color:var(--dim);line-height:1.8;">
+        <div><span style="color:var(--blue);font-weight:700;">RSI</span> — Momentum Oscillator (14)</div>
+        <div><span style="color:var(--accent);font-weight:700;">MACD</span> — Trend + Momentum (12,26,9)</div>
+        <div><span style="color:var(--green);font-weight:700;">EMA</span> — 20/50/200 Cross</div>
+        <div><span style="color:var(--accent2);font-weight:700;">BB</span> — Bollinger Bands (20,2)</div>
+        <div><span style="color:var(--pink);font-weight:700;">Stoch</span> — Stochastic (14,3,3)</div>
+        <div><span style="color:var(--cyan);font-weight:700;">VWAP</span> — Vol Weighted Avg Price</div>
+        <div><span style="color:var(--red);font-weight:700;">ADX</span> — Trend Strength (14)</div>
+        <div><span style="color:#b478ff;font-weight:700;">Ichi</span> — Ichimoku Cloud</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYMS2 = [
+  {sym:'RELIANCE',name:'NSE',base:2890},{sym:'TCS',name:'NSE',base:3720},
+  {sym:'HDFC',name:'NSE',base:1640},{sym:'INFY',name:'NSE',base:1480},
+  {sym:'ICICIBANK',name:'NSE',base:1120},{sym:'SBIN',name:'NSE',base:785},
+  {sym:'WIPRO',name:'NSE',base:462},{sym:'LT',name:'NSE',base:3450},
+  {sym:'AXISBANK',name:'NSE',base:1090},{sym:'MARUTI',name:'NSE',base:12800},
+  {sym:'BAJFINANCE',name:'NSE',base:7200},{sym:'HCLTECH',name:'NSE',base:1580},
+  {sym:'TATAMOTORS',name:'NSE',base:920},{sym:'ADANIENT',name:'NSE',base:2450},
+  {sym:'NIFTY',name:'Index',base:22450},{sym:'BANKNIFTY',name:'Index',base:48200},
+  {sym:'SUNPHARMA',name:'NSE',base:1680},{sym:'TATASTEEL',name:'NSE',base:165},
+  {sym:'POWERGRID',name:'NSE',base:310},{sym:'HINDUNILVR',name:'NSE',base:2560},
+];
+
+let activeInds = new Set(['rsi','macd','ema','bb','stoch','vwap','adx','ichi']);
+let minConf = 3;
+let currentSignals2 = [];
+let sortKey = 'acc';
+
+function toggleInd(el){
+  const ind = el.dataset.ind;
+  if(activeInds.has(ind)){ activeInds.delete(ind); el.classList.remove('active'); }
+  else { activeInds.add(ind); el.classList.add('active'); }
+}
+function setMinConf(n, el){
+  minConf = n;
+  document.querySelectorAll('#conf3,#conf4,#conf5,#conf6').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function genRSI(bias){ return bias==='BUY'?Math.floor(30+Math.random()*20):Math.floor(60+Math.random()*20); }
+function genMACD(bias){ const v=(Math.random()*2-0.5).toFixed(2); return bias==='BUY'?Math.abs(v):-Math.abs(v); }
+function genADX(){ return Math.floor(20+Math.random()*35); }
+
+function generateSignal2(symObj){
+  const price = symObj.base * (1+((Math.random()-0.5)*0.06));
+  const chng = (Math.random()-0.48)*4;
+  const sig = chng>0.3?'BUY':chng<-0.3?'SELL':'HOLD';
+  
+  const indNames = [...activeInds];
+  const indsData = {};
+  let confCount = 0;
+  
+  indNames.forEach(ind=>{
+    const aligned = Math.random()>0.35;
+    if(aligned) confCount++;
+    const signalBias = aligned?(sig==='BUY'?'bull':'bear'):'neutral';
+    let val='';
+    if(ind==='rsi') val=genRSI(sig);
+    else if(ind==='macd') val=genMACD(sig);
+    else if(ind==='ema') val=sig==='BUY'?'20>50>200':'20<50<200';
+    else if(ind==='bb') val=sig==='BUY'?'Near Lower':'Near Upper';
+    else if(ind==='stoch') val=sig==='BUY'?Math.floor(15+Math.random()*20):Math.floor(70+Math.random()*20);
+    else if(ind==='vwap') val=sig==='BUY'?'Above':'Below';
+    else if(ind==='adx') val=genADX();
+    else if(ind==='ichi') val=sig==='BUY'?'Above Cloud':'Below Cloud';
+    indsData[ind]={val,bias:signalBias,aligned};
+  });
+
+  const acc = Math.min(96, 55 + confCount*5 + Math.floor(Math.random()*10));
+  const entryPrice = price;
+  const sl = (price*(1-(sig==='BUY'?1:-1)*0.022)).toFixed(2);
+  const t1 = (price*(1+(sig==='BUY'?1:-1)*0.025)).toFixed(2);
+  const t2 = (price*(1+(sig==='BUY'?1:-1)*0.05)).toFixed(2);
+  const rr = (((sig==='BUY'?t1:t1)-entryPrice)/((sig==='BUY'?sl:sl)-entryPrice)).toFixed(2);
+
+  return {symObj, price, chng, sig, confCount, indsData, acc, entryPrice, sl, t1, t2, rr};
+}
+
+function confColor(c,max){
+  const pct = c/max;
+  if(pct>=0.75) return {fill:'var(--green)',text:'var(--green)'};
+  if(pct>=0.5) return {fill:'var(--accent2)',text:'var(--accent2)'};
+  return {fill:'var(--dim)',text:'var(--dim)'};
+}
+
+function accCls(a){ return a>=85?'high':a>=75?'med':'low'; }
+
+function renderCard(sig, idx){
+  const indList = Object.entries(sig.indsData);
+  const maxConf = indList.length;
+  const cc = confColor(sig.confCount, maxConf);
+  const confPct = Math.round(sig.confCount/maxConf*100);
+  const cardCls = sig.sig==='BUY'?'bull-card':sig.sig==='SELL'?'bear-card':'neutral-card';
+  const sigCls = sig.sig==='BUY'?'st-buy':sig.sig==='SELL'?'st-sell':'st-hold';
+  const chngCls = sig.chng>=0?'chg-up':'chg-dn';
+  const chngSign = sig.chng>=0?'+':'';
+
+  const indPills = indList.map(([k,v])=>{
+    const aligned = v.aligned;
+    return `<div class="ind-pill ip-${k}" style="${aligned?'':'opacity:0.45;text-decoration:line-through'}">${k.toUpperCase()}</div>`;
+  }).join('');
+
+  const detailCells = indList.map(([k,v])=>{
+    const sigTxt = v.bias==='bull'?'▲ Bullish':v.bias==='bear'?'▼ Bearish':'→ Neutral';
+    return `<div class="d-cell">
+      <div class="d-ind">${k.toUpperCase()}</div>
+      <div class="d-val">${v.val}</div>
+      <div class="d-sig ${v.bias}">${sigTxt}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="scard ${cardCls}" style="animation-delay:${idx*0.05}s" onclick="toggleDetail(this)">
+    <div class="scard-top">
+      <div class="scard-sym">${sig.symObj.sym}<small>${sig.symObj.name}</small></div>
+      <div class="ind-pills">${indPills}</div>
+      <div class="confluence-wrap">
+        <div class="conf-label">Confluence: <span style="color:${cc.text};font-weight:700;">${sig.confCount}/${maxConf}</span></div>
+        <div class="conf-bar"><div class="conf-fill" style="width:${confPct}%;background:${cc.fill}"></div></div>
+        <div class="conf-val" style="color:${cc.text}">${confPct}% aligned</div>
+      </div>
+      <div class="price-block">
+        <div class="price-big">₹${sig.price>=1000?sig.price.toFixed(1):sig.price.toFixed(2)}</div>
+        <div class="price-chng ${chngCls}">${chngSign}${sig.chng.toFixed(2)}%</div>
+      </div>
+      <div class="signal-tag ${sigCls}">${sig.sig}</div>
+      <div class="acc-ring ${accCls(sig.acc)}"><div class="acc-num">${sig.acc}%</div><div class="acc-pct">ACC</div></div>
+    </div>
+    <div class="scard-detail">
+      <div class="detail-grid">${detailCells}</div>
+      <div class="tgt-row">
+        <div class="tgt-item"><div class="tgt-key">Entry</div><div class="tgt-val">₹${sig.entryPrice.toFixed(2)}</div></div>
+        <div class="tgt-item"><div class="tgt-key">Stop Loss</div><div class="tgt-val tgt-sl">₹${sig.sl}</div></div>
+        <div class="tgt-item"><div class="tgt-key">Target 1</div><div class="tgt-val tgt-t1">₹${sig.t1}</div></div>
+        <div class="tgt-item"><div class="tgt-key">Target 2</div><div class="tgt-val tgt-t2">₹${sig.t2}</div></div>
+        <div class="tgt-item"><div class="tgt-key">Risk:Reward</div><div class="tgt-val tgt-rr">1:${Math.abs(sig.rr)}</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleDetail(el){
+  const det = el.querySelector('.scard-detail');
+  det.classList.toggle('open');
+}
+
+function runScan2(){
+  const btn = document.getElementById('scanBtn2');
+  btn.textContent = '⟳ SCANNING...';
+  btn.classList.add('running');
+
+  setTimeout(()=>{
+    const minAccVal = parseInt(document.getElementById('minAcc2').value)||0;
+    const sigF = document.getElementById('signalFilter').value;
+
+    let raw = SYMS2.map(generateSignal2);
+    raw = raw.filter(s=>s.confCount>=minConf && s.acc>=minAccVal);
+    if(sigF!=='all') raw = raw.filter(s=>s.sig===sigF);
+    raw.sort((a,b)=>sortKey==='acc'?b.acc-a.acc:sortKey==='conf'?b.confCount-a.confCount:b.price-a.price);
+
+    currentSignals2 = raw;
+    const cards = document.getElementById('signalCards');
+    if(raw.length===0){
+      cards.innerHTML='<div class="no-sig"><div>🔍</div>No signals found. Try lowering filters.</div>';
+    } else {
+      cards.innerHTML = raw.map((s,i)=>renderCard(s,i)).join('');
+    }
+
+    document.getElementById('sigCount').textContent = raw.length+' Signals';
+    document.getElementById('lastScan').textContent = new Date().toLocaleTimeString('en-IN');
+
+    updateIndSummary(raw);
+    updateVerdict(raw);
+    updateTop(raw);
+
+    btn.textContent = '▶ RUN SCAN';
+    btn.classList.remove('running');
+  }, 1100);
+}
+
+function sortBy(key){
+  sortKey = key;
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  if(currentSignals2.length) runScan2();
+}
+
+function updateIndSummary(sigs){
+  const inds = ['rsi','macd','ema','bb','stoch','vwap','adx','ichi'];
+  const labels = {rsi:'RSI',macd:'MACD',ema:'EMA Cross',bb:'Bollinger',stoch:'Stochastic',vwap:'VWAP',adx:'ADX',ichi:'Ichimoku'};
+  const el = document.getElementById('indSummary');
+  el.innerHTML = inds.filter(i=>activeInds.has(i)).map(i=>{
+    const t = Math.random();
+    const bias = t>0.55?'bull':t<0.38?'bear':'neut';
+    const dotCls = `dot-${bias}`;
+    const val = i==='rsi'?Math.floor(30+Math.random()*50):i==='adx'?Math.floor(20+Math.random()*40):'--';
+    return `<div class="ind-sum-item">
+      <div class="ind-icon ${i}">${i.substring(0,3).toUpperCase()}</div>
+      <div class="ind-info">
+        <div class="ind-name">${labels[i]}</div>
+        <div class="ind-sval">${val!=='--'?val:''}</div>
+      </div>
+      <div class="ind-signal-dot ${dotCls}"></div>
+    </div>`;
+  }).join('');
+}
+
+function updateVerdict(sigs){
+  const buy = sigs.filter(s=>s.sig==='BUY').length;
+  const sell = sigs.filter(s=>s.sig==='SELL').length;
+  const total = sigs.length || 1;
+  const vEl = document.getElementById('verdictVal');
+  const vSub = document.getElementById('verdictSub');
+  if(buy/total>0.55){ vEl.textContent='BULLISH'; vEl.className='verdict-val buy'; vSub.textContent=`${buy} buy vs ${sell} sell signals`; }
+  else if(sell/total>0.55){ vEl.textContent='BEARISH'; vEl.className='verdict-val sell'; vSub.textContent=`${sell} sell vs ${buy} buy signals`; }
+  else { vEl.textContent='NEUTRAL'; vEl.className='verdict-val neutral'; vSub.textContent='Mixed signals — wait for clarity'; }
+}
+
+function updateTop(sigs){
+  const top = [...sigs].sort((a,b)=>b.acc-a.acc).slice(0,6);
+  const el = document.getElementById('topList');
+  el.innerHTML = top.map((s,i)=>`
+    <div class="top-item">
+      <div class="top-rank">${i+1}</div>
+      <div class="top-sym">${s.symObj.sym}</div>
+      <div class="top-conf">${s.confCount}/${Object.keys(s.indsData).length} conf</div>
+      <div class="top-acc">${s.acc}%</div>
+    </div>
+  `).join('');
+}
+
+function updateClock2(){
+  const now = new Date();
+  document.getElementById('clock2').textContent = now.toLocaleTimeString('en-IN',{hour12:false});
+}
+setInterval(updateClock2,1000); updateClock2();
+setTimeout(runScan2, 400);
+</script>
+</body>
+</html>

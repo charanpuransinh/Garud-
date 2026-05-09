@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Money Scanner Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020b18;
+    --bg2: #040f1f;
+    --card: #071428;
+    --border: #0d3060;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #00ff88;
+    --red: #ff3366;
+    --yellow: #ffd700;
+    --purple: #a855f7;
+    --text: #c8e6ff;
+    --dim: #4a7fa8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(0,212,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 90% 50%, rgba(168,85,247,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header {
+    padding: 18px 30px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%);
+    position: relative;
+    z-index: 10;
+  }
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(0,212,255,0.5);
+  }
+  .logo span { color: var(--yellow); }
+  .live-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    padding: 5px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--green);
+  }
+  .live-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,0.5)} 50%{opacity:0.7;box-shadow:0 0 0 6px transparent} }
+
+  .controls {
+    display: flex; gap: 12px; padding: 16px 30px;
+    flex-wrap: wrap; align-items: center;
+    border-bottom: 1px solid rgba(13,48,96,0.5);
+    position: relative; z-index: 10;
+  }
+  .ctrl-group { display: flex; gap: 8px; align-items: center; }
+  .ctrl-label { font-size: 11px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+  select, button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  select:hover, button:hover { border-color: var(--accent); color: var(--accent); }
+  .scan-btn {
+    background: linear-gradient(135deg, #0066cc, #00aaff);
+    border: none; color: #fff;
+    padding: 8px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px; letter-spacing: 2px;
+    border-radius: 6px;
+    box-shadow: 0 0 20px rgba(0,170,255,0.3);
+    transition: all 0.3s;
+  }
+  .scan-btn:hover { box-shadow: 0 0 35px rgba(0,170,255,0.6); transform: translateY(-1px); color: #fff; }
+  .scan-btn.scanning { animation: scanAnim 1s infinite; }
+  @keyframes scanAnim { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  .main { display: grid; grid-template-columns: 1fr 320px; gap: 0; position: relative; z-index: 5; }
+
+  .scanner-panel { padding: 20px 30px; }
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px; letter-spacing: 3px;
+    color: var(--accent); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+  .signal-grid { display: flex; flex-direction: column; gap: 8px; }
+  .signal-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 100px 90px 90px 100px 110px;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .signal-row:hover { border-color: var(--accent); background: rgba(0,212,255,0.04); transform: translateX(3px); }
+  .signal-row.bull { border-left: 3px solid var(--green); }
+  .signal-row.bear { border-left: 3px solid var(--red); }
+  .signal-row.neutral { border-left: 3px solid var(--yellow); }
+
+  .sym { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: #fff; }
+  .sym small { display: block; font-family: 'Rajdhani'; font-size: 10px; color: var(--dim); letter-spacing: 1px; font-weight: 400; margin-top: 1px; }
+
+  .smc-tools { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 2px 7px; border-radius: 3px; text-transform: uppercase;
+  }
+  .tag.ob { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .tag.os { background: rgba(255,107,53,0.15); color: var(--accent2); border: 1px solid rgba(255,107,53,0.3); }
+  .tag.fvg { background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+  .tag.bos { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+  .tag.choch { background: rgba(255,51,102,0.15); color: var(--red); border: 1px solid rgba(255,51,102,0.3); }
+  .tag.liq { background: rgba(255,215,0,0.15); color: var(--yellow); border: 1px solid rgba(255,215,0,0.3); }
+  .tag.pd { background: rgba(0,200,100,0.12); color: #00cc77; border: 1px solid rgba(0,200,100,0.25); }
+  .tag.imb { background: rgba(100,200,255,0.12); color: #64c8ff; border: 1px solid rgba(100,200,255,0.25); }
+  .tag.ifvg { background: rgba(200,150,255,0.12); color: #c896ff; border: 1px solid rgba(200,150,255,0.25); }
+  .tag.mss { background: rgba(255,200,50,0.12); color: #ffc832; border: 1px solid rgba(255,200,50,0.25); }
+
+  .price { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: #fff; }
+  .chng { font-size: 13px; font-weight: 700; }
+  .chng.pos { color: var(--green); }
+  .chng.neg { color: var(--red); }
+
+  .bias-bar { display: flex; align-items: center; gap: 6px; }
+  .bias-icon { font-size: 12px; }
+  .bias-txt { font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+  .bias-txt.bull { color: var(--green); }
+  .bias-txt.bear { color: var(--red); }
+  .bias-txt.neutral { color: var(--yellow); }
+
+  .acc-score {
+    display: flex; align-items: center; justify-content: center;
+    width: 52px; height: 26px; border-radius: 13px;
+    font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+  }
+  .acc-score.high { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid rgba(0,255,136,0.4); }
+  .acc-score.med { background: rgba(255,215,0,0.15); color: var(--yellow); border: 1px solid rgba(255,215,0,0.4); }
+  .acc-score.low { background: rgba(255,51,102,0.15); color: var(--red); border: 1px solid rgba(255,51,102,0.4); }
+
+  .entry-zone { font-size: 11px; color: var(--dim); font-family: 'Rajdhani'; }
+  .entry-zone span { color: var(--text); font-weight: 600; }
+
+  /* Right Sidebar */
+  .sidebar {
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    background: var(--bg2);
+  }
+  .sidebar-section { margin-bottom: 24px; }
+  .s-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--dim); margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(13,48,96,0.4); }
+  .stat-label { font-size: 12px; color: var(--dim); }
+  .stat-val { font-size: 13px; font-weight: 700; color: var(--text); }
+  .stat-val.g { color: var(--green); }
+  .stat-val.r { color: var(--red); }
+  .stat-val.y { color: var(--yellow); }
+
+  .heatmap { display: grid; grid-template-columns: repeat(5,1fr); gap: 3px; margin-top: 8px; }
+  .hm-cell {
+    height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .hm-cell:hover { transform: scale(1.05); }
+  .hm-bull { background: rgba(0,255,136,0.2); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+  .hm-bear { background: rgba(255,51,102,0.2); color: var(--red); border: 1px solid rgba(255,51,102,0.3); }
+  .hm-neut { background: rgba(255,215,0,0.15); color: var(--yellow); border: 1px solid rgba(255,215,0,0.3); }
+
+  .flow-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid rgba(13,48,96,0.3);
+    font-size: 12px;
+  }
+  .flow-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .flow-dot.buy { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .flow-dot.sell { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .flow-sym { font-weight: 700; color: #fff; font-family: 'Orbitron', monospace; font-size: 11px; width: 55px; }
+  .flow-details { flex: 1; color: var(--dim); }
+  .flow-val { font-weight: 700; }
+  .flow-val.buy { color: var(--green); }
+  .flow-val.sell { color: var(--red); }
+
+  .col-header {
+    display: grid;
+    grid-template-columns: 90px 1fr 100px 90px 90px 100px 110px;
+    gap: 10px;
+    padding: 8px 16px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    color: var(--dim); text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .no-results { text-align: center; padding: 40px; color: var(--dim); font-size: 14px; }
+
+  .footer-bar {
+    display: flex; gap: 20px; padding: 10px 30px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--dim);
+    position: relative; z-index: 10;
+    flex-wrap: wrap;
+  }
+  .footer-item span { color: var(--text); font-weight: 600; }
+
+  /* Tooltip */
+  .tooltip-overlay {
+    position: fixed; z-index: 1000; pointer-events: none;
+    background: var(--card); border: 1px solid var(--accent);
+    border-radius: 10px; padding: 14px 18px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(0,212,255,0.1);
+    min-width: 240px; display: none;
+  }
+  .tooltip-overlay.show { display: block; }
+  .tt-sym { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+  .tt-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(13,48,96,0.4); }
+  .tt-key { color: var(--dim); }
+  .tt-val { font-weight: 600; }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .signal-row { animation: fadeIn 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">SMART<span>MONEY</span> SCANNER <span style="font-size:11px;color:var(--dim);letter-spacing:1px;">PRO v3.0</span></div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div style="font-size:11px;color:var(--dim);" id="clock"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <span class="ctrl-label">Market</span>
+    <select id="marketSel">
+      <option value="all">All Markets</option>
+      <option value="equity">Equity (NSE/BSE)</option>
+      <option value="fo">F&O</option>
+      <option value="crypto">Crypto</option>
+      <option value="forex">Forex</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Timeframe</span>
+    <select id="tfSel">
+      <option value="15m">15 Min</option>
+      <option value="1h" selected>1 Hour</option>
+      <option value="4h">4 Hour</option>
+      <option value="1d">Daily</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">SMC Tool</span>
+    <select id="smcFilter">
+      <option value="all">All Tools</option>
+      <option value="ob">Order Block</option>
+      <option value="fvg">FVG</option>
+      <option value="bos">BOS / MSS</option>
+      <option value="liq">Liquidity</option>
+      <option value="pd">PD Array</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Bias</span>
+    <select id="biasFilter">
+      <option value="all">All</option>
+      <option value="bull">Bullish</option>
+      <option value="bear">Bearish</option>
+      <option value="neutral">Neutral</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Min Accuracy</span>
+    <select id="accFilter">
+      <option value="0">Any</option>
+      <option value="75">75%+</option>
+      <option value="80" selected>80%+</option>
+      <option value="85">85%+</option>
+      <option value="90">90%+</option>
+    </select>
+  </div>
+  <button class="scan-btn" id="scanBtn" onclick="runScan()">⬡ SCAN NOW</button>
+</div>
+
+<div class="main">
+  <div class="scanner-panel">
+    <div class="panel-title">SMART MONEY SIGNALS</div>
+    <div class="col-header">
+      <div>SYMBOL</div>
+      <div>SMC TOOLS ACTIVE</div>
+      <div>PRICE</div>
+      <div>CHANGE</div>
+      <div>BIAS</div>
+      <div>ENTRY ZONE</div>
+      <div>ACCURACY</div>
+    </div>
+    <div class="signal-grid" id="signalGrid">
+      <div class="no-results">Click SCAN NOW to start scanning...</div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="s-title">Session Stats</div>
+      <div class="stat-row"><span class="stat-label">Total Signals</span><span class="stat-val" id="sTotalSig">0</span></div>
+      <div class="stat-row"><span class="stat-label">Bullish</span><span class="stat-val g" id="sBull">0</span></div>
+      <div class="stat-row"><span class="stat-label">Bearish</span><span class="stat-val r" id="sBear">0</span></div>
+      <div class="stat-row"><span class="stat-label">Neutral</span><span class="stat-val y" id="sNeut">0</span></div>
+      <div class="stat-row"><span class="stat-label">Avg Accuracy</span><span class="stat-val" id="sAvgAcc">--</span></div>
+      <div class="stat-row"><span class="stat-label">High Confluence</span><span class="stat-val g" id="sHighConf">0</span></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="s-title">Market Heatmap</div>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="s-title">Institutional Flow</div>
+      <div id="flowList"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="s-title">SMC Tool Legend</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+        <span class="tag ob">OB=Order Block</span>
+        <span class="tag os">OS=O.Shelf</span>
+        <span class="tag fvg">FVG=Fair Value Gap</span>
+        <span class="tag bos">BOS=Break of Structure</span>
+        <span class="tag choch">CHOCH=Change of Character</span>
+        <span class="tag liq">LIQ=Liquidity</span>
+        <span class="tag pd">PD=Premium/Discount</span>
+        <span class="tag imb">IMB=Imbalance</span>
+        <span class="tag ifvg">IFVG=Inverse FVG</span>
+        <span class="tag mss">MSS=Market Structure Shift</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-bar">
+  <div>Market: <span id="fMarket">NSE/BSE + F&O</span></div>
+  <div>TF: <span id="fTf">1H</span></div>
+  <div>Last Scan: <span id="fLast">--</span></div>
+  <div>Signals Found: <span id="fCount">0</span></div>
+  <div style="margin-left:auto;color:rgba(255,100,100,0.6);font-size:10px;">⚠ For educational/informational purposes only. Not financial advice.</div>
+</div>
+
+<div class="tooltip-overlay" id="tooltip"></div>
+
+<script>
+const SYMBOLS = [
+  {sym:'NIFTY',name:'Index',base:22450,vol:'HIGH'},
+  {sym:'BANKNIFTY',name:'Index',base:48200,vol:'HIGH'},
+  {sym:'RELIANCE',name:'NSE Equity',base:2890,vol:'HIGH'},
+  {sym:'TCS',name:'NSE Equity',base:3720,vol:'MED'},
+  {sym:'HDFC',name:'NSE Equity',base:1640,vol:'HIGH'},
+  {sym:'INFY',name:'NSE Equity',base:1480,vol:'MED'},
+  {sym:'ICICIBANK',name:'NSE Equity',base:1120,vol:'HIGH'},
+  {sym:'SBIN',name:'NSE Equity',base:785,vol:'HIGH'},
+  {sym:'WIPRO',name:'NSE Equity',base:462,vol:'MED'},
+  {sym:'LT',name:'NSE Equity',base:3450,vol:'MED'},
+  {sym:'AXISBANK',name:'NSE Equity',base:1090,vol:'HIGH'},
+  {sym:'MARUTI',name:'NSE Equity',base:12800,vol:'MED'},
+  {sym:'BAJFINANCE',name:'NSE Equity',base:7200,vol:'HIGH'},
+  {sym:'HCLTECH',name:'NSE Equity',base:1580,vol:'MED'},
+  {sym:'TATAMOTORS',name:'NSE Equity',base:920,vol:'HIGH'},
+  {sym:'ADANIENT',name:'NSE Equity',base:2450,vol:'HIGH'},
+  {sym:'POWERGRID',name:'NSE Equity',base:310,vol:'MED'},
+  {sym:'HINDUNILVR',name:'NSE Equity',base:2560,vol:'LOW'},
+  {sym:'SUNPHARMA',name:'NSE Equity',base:1680,vol:'MED'},
+  {sym:'TATASTEEL',name:'NSE Equity',base:165,vol:'HIGH'},
+];
+
+const SMC_COMBOS = [
+  ['ob','fvg','bos'],
+  ['ob','liq','pd'],
+  ['choch','fvg','mss'],
+  ['ob','os','imb'],
+  ['bos','liq','ifvg'],
+  ['ob','fvg'],
+  ['choch','os','pd'],
+  ['liq','mss','bos'],
+  ['ob','imb','pd'],
+  ['fvg','ifvg','liq'],
+  ['ob','bos','choch','fvg'],
+  ['mss','liq','ob'],
+];
+
+const HEATMAP_SYMS = ['NIFTY','BNKN','RELI','TCS','HDFC','INFY','ICICI','SBIN','WIPRO','LT','AXIS','MRUT','BAJF','HCLT','TATM'];
+
+function rnd(min,max){ return Math.random()*(max-min)+min; }
+function rndInt(min,max){ return Math.floor(rnd(min,max+1)); }
+function pick(arr){ return arr[rndInt(0,arr.length-1)]; }
+
+function formatPrice(p){ return p >= 1000 ? p.toFixed(1) : p.toFixed(2); }
+
+function getAccClass(acc){ return acc>=85?'high':acc>=75?'med':'low'; }
+
+function generateSignal(symObj){
+  const price = symObj.base * (1 + rnd(-0.04, 0.04));
+  const chng = rnd(-3,3);
+  const tools = pick(SMC_COMBOS);
+  const biases = ['bull','bull','bull','bear','bear','neutral'];
+  const bias = chng > 0.5 ? (Math.random()>0.3?'bull':'neutral') : chng < -0.5 ? (Math.random()>0.3?'bear':'neutral') : 'neutral';
+  const acc = rndInt(72, 96);
+  const toolCount = tools.length;
+  const confluence = toolCount >= 3 && acc >= 82;
+  const entryLow = price * (1 - rnd(0.004, 0.015));
+  const entryHigh = price * (1 + rnd(0.004, 0.015));
+  return { symObj, price, chng, tools, bias, acc, confluence, entryLow, entryHigh };
+}
+
+function tagHTML(t){ return `<span class="tag ${t}">${t.toUpperCase()}</span>`; }
+
+function signalRowHTML(sig, i){
+  const bias = sig.bias;
+  const cls = bias==='bull'?'bull':bias==='bear'?'bear':'neutral';
+  const biasIcon = bias==='bull'?'▲':bias==='bear'?'▼':'◆';
+  const chngSign = sig.chng>=0?'+':'';
+  const accCls = getAccClass(sig.acc);
+  return `
+    <div class="signal-row ${cls}" style="animation-delay:${i*0.04}s" 
+         onmouseenter="showTip(event,${i})" onmouseleave="hideTip()">
+      <div class="sym">${sig.symObj.sym}<small>${sig.symObj.name}</small></div>
+      <div class="smc-tools">${sig.tools.map(tagHTML).join('')}${sig.confluence?'<span class="tag bos" style="background:rgba(0,255,200,0.15);color:#00ffc8;">★HIGH</span>':''}</div>
+      <div class="price">₹${formatPrice(sig.price)}</div>
+      <div class="chng ${sig.chng>=0?'pos':'neg'}">${chngSign}${sig.chng.toFixed(2)}%</div>
+      <div class="bias-bar"><span class="bias-icon">${biasIcon}</span><span class="bias-txt ${bias}">${bias.toUpperCase()}</span></div>
+      <div class="entry-zone"><span>₹${formatPrice(sig.entryLow)}</span> - <span>₹${formatPrice(sig.entryHigh)}</span></div>
+      <div><div class="acc-score ${accCls}">${sig.acc}%</div></div>
+    </div>`;
+}
+
+let currentSignals = [];
+
+function runScan(){
+  const btn = document.getElementById('scanBtn');
+  btn.textContent = '⟳ SCANNING...';
+  btn.classList.add('scanning');
+
+  setTimeout(()=>{
+    const minAcc = parseInt(document.getElementById('accFilter').value)||0;
+    const biasF = document.getElementById('biasFilter').value;
+    const smcF = document.getElementById('smcFilter').value;
+
+    let raw = SYMBOLS.map(generateSignal);
+    raw = raw.filter(s=>s.acc>=minAcc);
+    if(biasF!=='all') raw = raw.filter(s=>s.bias===biasF);
+    if(smcF!=='all') raw = raw.filter(s=>s.tools.includes(smcF));
+    raw.sort((a,b)=>b.acc-a.acc);
+
+    currentSignals = raw;
+
+    const grid = document.getElementById('signalGrid');
+    if(raw.length===0){
+      grid.innerHTML='<div class="no-results">No signals match current filters. Try adjusting filters.</div>';
+    } else {
+      grid.innerHTML = raw.map((s,i)=>signalRowHTML(s,i)).join('');
+    }
+
+    updateStats(raw);
+    renderHeatmap();
+    renderFlow();
+
+    document.getElementById('fLast').textContent = new Date().toLocaleTimeString('en-IN');
+    document.getElementById('fCount').textContent = raw.length;
+    document.getElementById('fTf').textContent = document.getElementById('tfSel').value.toUpperCase();
+
+    btn.textContent = '⬡ SCAN NOW';
+    btn.classList.remove('scanning');
+  },1200);
+}
+
+function updateStats(sigs){
+  const bull = sigs.filter(s=>s.bias==='bull').length;
+  const bear = sigs.filter(s=>s.bias==='bear').length;
+  const neut = sigs.filter(s=>s.bias==='neutral').length;
+  const avg = sigs.length ? (sigs.reduce((a,s)=>a+s.acc,0)/sigs.length).toFixed(1) : '--';
+  const hc = sigs.filter(s=>s.confluence).length;
+  document.getElementById('sTotalSig').textContent = sigs.length;
+  document.getElementById('sBull').textContent = bull;
+  document.getElementById('sBear').textContent = bear;
+  document.getElementById('sNeut').textContent = neut;
+  document.getElementById('sAvgAcc').textContent = avg!=='--'?avg+'%':'--';
+  document.getElementById('sHighConf').textContent = hc;
+}
+
+function renderHeatmap(){
+  const el = document.getElementById('heatmap');
+  el.innerHTML = HEATMAP_SYMS.map(s=>{
+    const t = Math.random();
+    const cls = t>0.55?'hm-bull':t<0.38?'hm-bear':'hm-neut';
+    return `<div class="hm-cell ${cls}">${s}</div>`;
+  }).join('');
+}
+
+function renderFlow(){
+  const el = document.getElementById('flowList');
+  const flows = [
+    {sym:'NIFTY',type:'buy',size:'₹485Cr',note:'Block Deal'},
+    {sym:'HDFC',type:'sell',size:'₹310Cr',note:'Bulk Sell'},
+    {sym:'RELI',type:'buy',size:'₹220Cr',note:'FII Buy'},
+    {sym:'ICICI',type:'buy',size:'₹180Cr',note:'DII Accum'},
+    {sym:'SBIN',type:'sell',size:'₹145Cr',note:'Profit Booking'},
+    {sym:'BAJF',type:'buy',size:'₹120Cr',note:'OI Buildup'},
+  ];
+  el.innerHTML = flows.map(f=>`
+    <div class="flow-item">
+      <div class="flow-dot ${f.type}"></div>
+      <div class="flow-sym">${f.sym}</div>
+      <div class="flow-details">${f.note}</div>
+      <div class="flow-val ${f.type}">${f.size}</div>
+    </div>
+  `).join('');
+}
+
+function showTip(e, idx){
+  if(!currentSignals[idx]) return;
+  const s = currentSignals[idx];
+  const tp = document.getElementById('tooltip');
+  const sl = (s.price * (1-0.025)).toFixed(2);
+  const t1 = (s.price * (1+(s.bias==='bear'?-1:1)*0.02)).toFixed(2);
+  const t2 = (s.price * (1+(s.bias==='bear'?-1:1)*0.04)).toFixed(2);
+  tp.innerHTML = `
+    <div class="tt-sym">${s.symObj.sym}</div>
+    <div class="tt-row"><span class="tt-key">Bias</span><span class="tt-val ${s.bias}">${s.bias.toUpperCase()}</span></div>
+    <div class="tt-row"><span class="tt-key">SMC Tools</span><span class="tt-val">${s.tools.join(', ').toUpperCase()}</span></div>
+    <div class="tt-row"><span class="tt-key">Accuracy</span><span class="tt-val" style="color:var(--green)">${s.acc}%</span></div>
+    <div class="tt-row"><span class="tt-key">Entry Zone</span><span class="tt-val">₹${formatPrice(s.entryLow)} – ₹${formatPrice(s.entryHigh)}</span></div>
+    <div class="tt-row"><span class="tt-key">Stop Loss</span><span class="tt-val" style="color:var(--red)">₹${sl}</span></div>
+    <div class="tt-row"><span class="tt-key">Target 1</span><span class="tt-val" style="color:var(--green)">₹${t1}</span></div>
+    <div class="tt-row"><span class="tt-key">Target 2</span><span class="tt-val" style="color:var(--green)">₹${t2}</span></div>
+    <div class="tt-row"><span class="tt-key">Confluence</span><span class="tt-val">${s.confluence?'✓ HIGH':'Moderate'}</span></div>
+  `;
+  tp.classList.add('show');
+  const x = Math.min(e.clientX+15, window.innerWidth-260);
+  const y = Math.min(e.clientY-20, window.innerHeight-320);
+  tp.style.left = x+'px'; tp.style.top = y+'px';
+}
+function hideTip(){ document.getElementById('tooltip').classList.remove('show'); }
+
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-IN',{hour12:false}) + ' IST';
+}
+setInterval(updateClock,1000); updateClock();
+
+// Auto scan on load
+setTimeout(runScan, 300);
+</script>
+</body>
+</html>
