@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VOLUME DECODED — ZERO-LINE MASTER</title>
+    <style>
+        body { background: #04080f; color: #d8e8ff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .dashboard { border: 2px solid #132240; border-radius: 8px; padding: 20px; background: #070d1a; }
+        .header { text-align: center; border-bottom: 1px solid #132240; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        /* Zero Line Box Styling */
+        .status-box { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .indicator { padding: 15px; border-radius: 4px; text-align: center; width: 30%; font-weight: bold; }
+        
+        .zero-line-zone { background: rgba(74, 96, 128, 0.1); border: 1px solid #4a6080; color: #4a6080; } /* Sideways */
+        .buy-zone { background: rgba(0, 200, 255, 0.1); border: 1px solid #00c8ff; color: #00c8ff; } /* Above Zero */
+        .sell-zone { background: rgba(255, 64, 96, 0.1); border: 1px solid #ff4060; color: #ff4060; } /* Breakdown */
+
+        .alert-flash { animation: blink 1s infinite; font-size: 20px; color: #ffb800; }
+        @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.3;} 100% {opacity: 1;} }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #132240; padding: 12px; text-align: center; }
+        .vol-bar { height: 20px; background: #00c8ff; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header">
+        <h1>MOGAL VOLUME MASTER — HIGH VERSION</h1>
+        <p>Zero-Line Based Volume Intelligence</p>
+    </div>
+
+    <div class="status-box">
+        <div id="status" class="indicator zero-line-zone">ZERO-LINE (NO TRADE ZONE)</div>
+    </div>
+
+    <div id="alert-area" style="text-align: center; height: 30px;"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Timeframe</th>
+                <th>Current Volume</th>
+                <th>Base (Zero-Line)</th>
+                <th>Shift Intensity</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="vol-table">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // आपका बेंचमार्क वॉल्यूम (जैसे रिलायंस के 300 शेयर)
+    const ZERO_LINE = 300; 
+
+    function updateVolume(currentVol) {
+        const tableBody = document.getElementById('vol-table');
+        const statusBox = document.getElementById('status');
+        const alertArea = document.getElementById('alert-area');
+        
+        let action = "";
+        let colorClass = "zero-line-zone";
+
+        // Logic Implementation
+        if (currentVol > ZERO_LINE * 3) {
+            action = "🟠 ALARM: CLIMAX VOLUME";
+            colorClass = "buy-zone"; // Intense activity
+            alertArea.innerHTML = "<span class='alert-flash'>⚠️ BIG PLAYERS ACTIVE!</span>";
+        } else if (currentVol > ZERO_LINE) {
+            action = "🔵 BUY SHIFT";
+            colorClass = "buy-zone";
+            alertArea.innerHTML = "";
+        } else if (currentVol < (ZERO_LINE * 0.5)) {
+            action = "⚪ DRY VOLUME (NO SUPPLY)";
+            colorClass = "zero-line-zone";
+            alertArea.innerHTML = "";
+        } else {
+            action = "WAITING...";
+            colorClass = "zero-line-zone";
+            alertArea.innerHTML = "";
+        }
+
+        statusBox.className = "indicator " + colorClass;
+        statusBox.innerText = action;
+
+        // Visual Table Update (Simulated for 15min)
+        tableBody.innerHTML = `
+            <tr>
+                <td>15 MIN</td>
+                <td>${currentVol}</td>
+                <td>${ZERO_LINE}</td>
+                <td>${((currentVol/ZERO_LINE)*100).toFixed(0)}%</td>
+                <td style="color: gold; font-weight:bold;">${action}</td>
+            </tr>
+        `;
+    }
+
+    // सिम्युलेशन के लिए: हर 3 सेकंड में वॉल्यूम बदलेगा (डेमो)
+    setInterval(() => {
+        let fakeVol = Math.floor(Math.random() * 1200);
+        updateVolume(fakeVol);
+    }, 3000);
+
+</script>
+</body>
+</html>
